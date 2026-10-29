@@ -1,0 +1,6 @@
+Zet hier je eigen foto's neer met precies deze namen (jpg):
+flipper-aan-het-werk.jpg (4:5)   melding-close-up.jpg (4:3)   deal-gescoord.jpg (4:3)
+feed-sneaker.jpg, feed-iphone.jpg (16:10)
+platform-marktplaats.jpg, platform-vinted.jpg, platform-ebay.jpg (16:9)
+academy-beginnen.jpg, academy-zoekopdracht.jpg, academy-veilig.jpg (4:3 of 16:9)
+Een bestand dat ontbreekt toont automatisch een lege placeholder.

@@ -1,0 +1,8 @@
+Apercu Mono Pro (Colophon) webfonts hier neerzetten, met precies deze namen:
+ApercuMonoPro-Light.woff2   (300)
+ApercuMonoPro-Regular.woff2 (400)
+ApercuMonoPro-Medium.woff2  (500)
+ApercuMonoPro-Bold.woff2    (700)
+Koop de WEB licentie op myfonts.com (Apercu Mono Pro, Regular/Medium/Bold, eventueel Light).
+Zolang de bestanden er niet staan gebruikt de site automatisch Geist Mono.
+Daarna: railway up --service flipscan-alerts --detach

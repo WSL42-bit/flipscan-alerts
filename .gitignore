@@ -1,0 +1,12 @@
+node_modules
+.env
+.env.*
+!.env.example
+netlify-site/
+flipscan-netlify/
+_nieuw/
+_nieuw2/
+*.zip
+*.tgz
+.wrangler/
+.DS_Store

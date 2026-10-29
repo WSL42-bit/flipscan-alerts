@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard | FlipScan Alerts</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+/* Dashboard bovenop site.css, zelfde lichte stijl */
+.dash{max-width:780px;margin:0 auto;padding:40px 20px 60px}
+.dash .card{margin-bottom:16px;padding:24px}
+.dash h2{font-size:21px;margin-bottom:14px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.muted{font-size:14px}
+.badge{background:var(--accent-soft);color:var(--accent);padding:4px 12px;border-radius:99px;font-size:13px;font-weight:600}
+.dash button{font:600 15px var(--f-body);cursor:pointer;border:2px solid var(--ink);border-radius:999px;padding:10px 18px;background:var(--ink);color:#fff}
+.dash button:hover{background:var(--accent);border-color:var(--accent)}
+.dash button.ghost{background:#fff;color:var(--ink);border-color:var(--line)}
+.dash button.ghost:hover{border-color:var(--ink)}
+.dash button.danger{background:#fff;color:#C2261E;border-color:#F3C9C6}
+.dash button:disabled{opacity:.5;cursor:default}
+.dash input{font:inherit;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:var(--r-sm);padding:12px 14px;width:100%}
+.dash input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+label.small{font-size:13px;color:var(--muted);display:block;margin-bottom:6px;font-weight:500}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.plats{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+.plat{border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:14px;font-weight:500;cursor:pointer;user-select:none;background:#fff}
+.plat.on{border-color:var(--ink);background:var(--ink);color:#fff}
+.plat.locked{opacity:.4;cursor:not-allowed}
+.s{border-top:1px solid var(--line);padding:16px 0}.s:first-child{border-top:0}
+.s b{font-size:16px}.s .actions{display:flex;gap:8px}
+.s .actions button{padding:7px 14px;font-size:13px}
+.err{color:#C2261E;font-size:14px;margin-top:10px;min-height:20px}
+.dash .plans{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;max-width:none}
+.dash .plan{border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.dash .plan .p{font:700 28px var(--f-head);margin:6px 0 8px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;font-weight:600;display:none}
+#login{text-align:center;padding:80px 20px}
+#logout{display:none}
+@media(max-width:600px){.grid2,.dash .plans{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+{{HEADER}}
+<div class="dash">
+  <div class="row" style="margin-bottom:20px"><h1 style="font-size:34px">Dashboard</h1><button class="ghost" id="logout">Uitloggen</button></div>
+
+  <div id="login" style="display:none">
+    <h2>Log in via Telegram</h2>
+    <p class="muted" style="margin:10px 0 24px">Stuur /login naar de bot en tik op de knop.</p>
+    <a class="btn blue" href="https://t.me/{{BOT}}?start=web">Open Telegram</a>
+  </div>
+
+  <div id="app" style="display:none">
+    <div class="card">
+      <div class="row">
+        <div><h2 style="margin:0" id="hello">Hoi</h2><span class="muted" id="planinfo"></span></div>
+        <div class="row"><span class="badge" id="tierbadge"></span><button class="ghost" id="pause"></button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 id="formtitle">Nieuwe zoekopdracht</h2>
+      <label class="small">Zoekterm</label>
+      <input id="q" placeholder="bijv. iphone 13 pro" maxlength="80">
+      <div class="plats" id="plats"></div>
+      <div class="grid2">
+        <div><label class="small">Min prijs (€)</label><input id="min" type="number" min="0" placeholder="0"></div>
+        <div><label class="small">Max prijs (€)</label><input id="max" type="number" min="0" placeholder="geen max"></div>
+      </div>
+      <div class="row" style="margin-top:16px"><button id="save">Opslaan</button><button class="ghost" id="cancel" style="display:none">Annuleren</button></div>
+      <div class="err" id="err"></div>
+    </div>
+
+    <div class="card">
+      <div class="row"><h2 style="margin:0">Je zoekopdrachten</h2><span class="muted" id="count"></span></div>
+      <div id="list" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card" id="friends" style="display:none">
+      <h2>Vrienden uitnodigen</h2>
+      <p class="muted">Je vriend krijgt <b>7 dagen gratis</b> in plaats van 2. Wordt hij abonnee, dan krijg jij <b>€4,99 tegoed</b>. Geen maximum.</p>
+      <div class="row" style="margin-top:14px;flex-wrap:nowrap"><input id="reflink" readonly><button id="copyref">Kopieer</button></div>
+      <p class="muted" id="refstats" style="margin-top:10px"></p>
+    </div>
+
+    <div class="card" id="billing">
+      <h2>Abonnement</h2>
+      <div id="billingbody"></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+var ALL = [['marktplaats','🟠 Marktplaats'],['vinted','🟢 Vinted'],['ebay','🔵 eBay']];
+var state = { me: null, searches: [], editId: null, sel: ['marktplaats','vinted'] };
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+function toast(t){ var el=$('toast'); el.textContent=t; el.style.display='block'; setTimeout(function(){ el.style.display='none'; },2500); }
+
+async function api(method, url, body){
+  var res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined, credentials: 'same-origin' });
+  var data = {}; try { data = await res.json(); } catch(e){}
+  if (!res.ok) { var err = new Error(data.error || 'Er ging iets mis'); err.status = res.status; throw err; }
+  return data;
+}
+
+function renderPlats(){
+  var allowed = state.me.tier.platforms;
+  $('plats').innerHTML = ALL.map(function(p){
+    var locked = allowed.indexOf(p[0]) === -1;
+    var on = state.sel.indexOf(p[0]) !== -1 && !locked;
+    return '<div class="plat'+(on?' on':'')+(locked?' locked':'')+'" data-p="'+p[0]+'">'+p[1]+(locked?' 🔒':'')+'</div>';
+  }).join('');
+  Array.prototype.forEach.call(document.querySelectorAll('.plat'), function(el){
+    el.onclick = function(){
+      var p = el.getAttribute('data-p');
+      if (el.classList.contains('locked')) return;
+      var i = state.sel.indexOf(p);
+      if (i === -1) state.sel.push(p); else state.sel.splice(i,1);
+      renderPlats();
+    };
+  });
+}
+
+function renderList(){
+  var max = state.me.user.tier === 'pro' ? 25 : 0;
+  var active = state.searches.filter(function(s){ return s.active; }).length;
+  $('count').textContent = active + ' van ' + max + ' actief';
+  if (!state.searches.length) { $('list').innerHTML = '<p class="muted">Nog geen zoekopdrachten. Maak er hierboven een aan.</p>'; return; }
+  $('list').innerHTML = state.searches.map(function(s){
+    var price = (s.min_price || s.max_price) ? ' · €' + (s.min_price || 0) + ' tot ' + (s.max_price ? '€' + s.max_price : 'geen max') : '';
+    return '<div class="s"><div class="row"><div><b>'+(s.active?'':'⏸ ')+esc(s.query)+'</b><div class="muted">'+esc(s.platforms.join(', '))+price+'</div></div>'+
+      '<div class="actions"><button class="ghost" data-a="edit" data-id="'+s.id+'">Wijzig</button>'+
+      '<button class="ghost" data-a="toggle" data-id="'+s.id+'">'+(s.active?'Pauzeer':'Activeer')+'</button>'+
+      '<button class="danger" data-a="del" data-id="'+s.id+'">Verwijder</button></div></div></div>';
+  }).join('');
+  Array.prototype.forEach.call(document.querySelectorAll('#list button'), function(b){
+    b.onclick = function(){ action(b.getAttribute('data-a'), parseInt(b.getAttribute('data-id'),10)); };
+  });
+}
+
+function renderBilling(){
+  var u = state.me.user, P = state.me.plans, html = '';
+  if (u.tier === 'pro') {
+    var cur = u.plan_interval === 'month' ? 'month' : 'week', other = cur === 'month' ? 'week' : 'month';
+    html += '<p class="muted">Je abonnement: <b style="color:var(--text)">'+P[cur].price+' '+P[cur].label.toLowerCase()+'</b> · 25 zoekopdrachten · check elke 30 sec</p>';
+    if (cur === 'week') {
+      var f2 = state.me.founderLeft > 0, mp = f2 ? '€9,99' : '€14,99', sv = f2 ? '€11,63' : '€6,63';
+      html += '<div class="upsell" style="margin-top:16px"><div><b>Bespaar '+sv+' per maand</b><p>Je betaalt nu omgerekend €21,62 per maand. Met het maandabonnement is dat '+mp+(f2?' (founder deal, nog '+state.me.founderLeft+' plekken)':'')+', met precies dezelfde functies. Stripe verrekent wat je al betaald hebt.</p></div><button data-int="month">Wissel naar maand</button></div>';
+      html += '<div class="row" style="margin-top:14px">';
+    } else {
+      html += '<div class="row" style="margin-top:14px"><button class="ghost" data-int="'+other+'">Wissel naar '+P[other].price+' '+P[other].label.toLowerCase()+'</button>';
+    }
+    if (state.me.hasBilling) html += '<button class="ghost" id="portal">Betaling en opzeggen</button>';
+    html += '</div>';
+  } else {
+    var t = state.me.trialAvailable;
+    html += '<p class="muted">'+(t ? 'Probeer '+state.me.trialDays+' dagen gratis. Zeg je op tijd op, dan betaal je niks.' : 'Je hebt geen actief abonnement, meldingen staan uit.')+'</p>';
+    html += '<div class="plans">';
+    var fl = state.me.founderLeft > 0;
+    html += '<div class="plan" style="border:2px solid var(--ink)"><b>Per maand</b> <span class="badge">'+(fl?'🔥 Founder deal':'Beste deal')+'</span><div class="p">'+(fl?'€9,99':'€14,99')+'<span class="muted"> /maand</span>'+(fl?' <s class="muted" style="font-size:15px">€14,99</s>':'')+'</div><span class="muted">'+(fl?'Voor de eerste 100, zolang je abonnement loopt. Nog '+state.me.founderLeft+' plekken.':'€0,49 per dag · bespaar €6,63 p/m t.o.v. week')+'</span><button style="margin-top:12px;width:100%" data-int="month">'+(t?'Start '+state.me.trialDays+' dagen gratis':'Kies maand')+'</button></div>';
+    html += '<div class="plan"><b>Per week</b><div class="p">€4,99<span class="muted"> /week</span></div><span class="muted">omgerekend €21,62 per maand</span><button class="ghost" style="margin-top:12px;width:100%" data-int="week">'+(t?'Start '+state.me.trialDays+' dagen gratis':'Kies week')+'</button></div>';
+    html += '</div>';
+    if (state.me.hasBilling) html += '<button class="ghost" id="portal" style="margin-top:14px">Facturen bekijken</button>';
+  }
+  $('billingbody').innerHTML = html;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-int]'), function(b){
+    b.onclick = async function(){
+      b.disabled = true;
+      try { var r = await api('POST','/api/checkout',{ interval: b.getAttribute('data-int') }); location.href = r.url; }
+      catch(e){ toast(e.message); b.disabled = false; }
+    };
+  });
+  if ($('portal')) $('portal').onclick = async function(){
+    try { var r = await api('POST','/api/portal'); location.href = r.url; } catch(e){ toast(e.message); }
+  };
+}
+
+function renderFriends(){
+  var r = state.me.referral; if (!r) return;
+  $('friends').style.display = '';
+  $('reflink').value = r.link;
+  $('refstats').textContent = 'Aangemeld via jou: ' + r.joined + ' · betalend: ' + r.paid + (r.paid ? ' · verdiend: €' + (r.paid * 4.99).toFixed(2).replace('.', ',') : '');
+  $('copyref').onclick = function(){ $('reflink').select(); try { navigator.clipboard.writeText(r.link); } catch(e){ document.execCommand('copy'); } toast('Link gekopieerd'); };
+}
+
+function render(){
+  var u = state.me.user;
+  $('hello').textContent = 'Hoi ' + (u.first_name || u.username || '') + ' 👋';
+  $('tierbadge').textContent = state.me.tier.label;
+  $('planinfo').textContent = u.tier !== 'pro' ? 'Start je abonnement om meldingen te krijgen' : (u.paused ? 'Meldingen staan op pauze' : 'Meldingen staan aan');
+  if (u.tier !== 'pro' && !state.billingFocused) { state.billingFocused = true; setTimeout(function(){ $('billing').scrollIntoView({ behavior: 'smooth' }); }, 300); }
+  $('pause').textContent = u.paused ? '▶️ Hervat' : '⏸ Pauzeer alles';
+  renderPlats(); renderList(); renderBilling(); renderFriends();
+}
+
+function resetForm(){
+  state.editId = null; state.sel = ['marktplaats','vinted'];
+  $('q').value=''; $('min').value=''; $('max').value=''; $('err').textContent='';
+  $('formtitle').textContent='Nieuwe zoekopdracht'; $('cancel').style.display='none';
+  renderPlats();
+}
+
+async function action(a, id){
+  var s = state.searches.filter(function(x){ return x.id === id; })[0];
+  try {
+    if (a === 'edit') {
+      state.editId = id; state.sel = s.platforms.slice();
+      $('q').value = s.query; $('min').value = s.min_price || ''; $('max').value = s.max_price || '';
+      $('formtitle').textContent = 'Zoekopdracht wijzigen'; $('cancel').style.display = '';
+      renderPlats(); window.scrollTo({ top: 0, behavior: 'smooth' }); return;
+    }
+    if (a === 'toggle') await api('PATCH','/api/searches/'+id,{ active: !s.active });
+    if (a === 'del') { if (!confirm('Zoekopdracht verwijderen?')) return; await api('DELETE','/api/searches/'+id); }
+    await loadSearches();
+  } catch(e){ toast(e.message); }
+}
+
+async function loadSearches(){ state.searches = await api('GET','/api/searches'); renderList(); }
+
+$('save').onclick = async function(){
+  $('err').textContent = '';
+  var body = { query: $('q').value, platforms: state.sel, min_price: $('min').value, max_price: $('max').value };
+  $('save').disabled = true;
+  try {
+    if (state.editId) await api('PATCH','/api/searches/'+state.editId, body);
+    else await api('POST','/api/searches', body);
+    toast(state.editId ? 'Opgeslagen' : 'Zoekopdracht staat aan, check je Telegram');
+    resetForm(); await loadSearches();
+  } catch(e){ $('err').textContent = e.message; }
+  $('save').disabled = false;
+};
+$('cancel').onclick = resetForm;
+$('pause').onclick = async function(){
+  try { await api('POST','/api/pause',{ paused: !state.me.user.paused }); state.me.user.paused = !state.me.user.paused; render(); } catch(e){ toast(e.message); }
+};
+$('logout').onclick = async function(){ await api('POST','/logout'); location.href = '/'; };
+
+(async function init(){
+  try {
+    state.me = await api('GET','/api/me');
+    await loadSearches();
+    $('app').style.display=''; $('logout').style.display='inline-block';
+    render();
+    if (location.search.indexOf('upgraded=1') !== -1) toast('Abonnement actief 🎉 Maak je eerste zoekopdracht');
+  } catch(e){
+    $('login').style.display='';
+  }
+})();
+</script>
+{{FOOTER}}
+</body>
+</html>
