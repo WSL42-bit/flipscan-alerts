@@ -170,22 +170,32 @@ section.tight{padding:64px 0}
 .ping em{font-style:normal;font-weight:700;color:var(--accent);font-size:13px}
 
 @media(max-width:880px){
-  .hero{padding-top:18px}
-  .hero-grid{grid-template-columns:1fr;gap:6px;min-height:0;max-height:none}
-  .wall{min-height:0}
-  .hero-copy{order:2;padding-bottom:56px}
-  /* Mobiel: deals direct bovenaan, als twee horizontale banden */
-  .wall{order:1;height:auto;overflow:hidden;align-self:stretch;contain:none;display:flex;flex-direction:column;gap:10px;margin:0 -20px;-webkit-mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
-  .wall-col{flex-direction:row;width:max-content;animation-name:left;animation-duration:38s}
-  .wall-col:nth-child(2){animation-name:right;animation-duration:44s}
-  .wall-col:nth-child(3){display:none}
-  .wall .dcard{width:146px;flex:none}
-  .dcard .meta{padding:7px 9px 9px}
-  @keyframes left{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-  @keyframes right{from{transform:translateX(-50%)}to{transform:translateX(0)}}
-  .ping{left:12px;right:12px;width:auto;top:96px;bottom:auto}
-  .ping b{max-width:none}
-  .hero-stats{gap:20px}
+  /* ===== Mobiel: eigen opbouw. Eén band met deals die je kunt vegen, geen transform-animaties ===== */
+  .hero{padding-top:16px}
+  .hero-grid{display:flex;flex-direction:column;gap:0;min-height:0;max-height:none}
+  .hero-copy{order:2;padding:22px 0 48px}
+  .wall{order:1;display:block;height:auto;min-height:0;contain:none;overflow:visible;margin:0 -20px;-webkit-mask:none;mask:none}
+  .wall-col{animation:none!important;transform:none!important}
+  .wall-col:nth-child(n+2){display:none}
+  .wall-col:first-child{display:flex;flex-direction:row;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 20px 8px;scroll-padding:0 20px;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+  .wall-col:first-child::-webkit-scrollbar{display:none}
+  .wall .dcard{flex:0 0 58vw;max-width:250px;scroll-snap-align:start}
+  .wall .dcard:hover{transform:none}
+  .dcard .meta{padding:9px 11px 11px}
+  .dcard .meta b{font-size:13px}
+  .wall-dots{display:flex;justify-content:center;gap:6px;margin-top:6px}
+  .wall-dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3);transition:background .2s,width .2s}
+  .wall-dots i.on{background:var(--sky);width:16px;border-radius:3px}
+  .ping{display:none}
+  .hero-src{margin-bottom:16px;gap:10px}
+  .hero h1{font-size:clamp(30px,8.6vw,40px);max-width:none}
+  .hero-sub{font-size:19px;margin-top:8px}
+  .hunt{margin-top:22px;border-radius:18px}
+  .hunt-row{flex-wrap:wrap}
+  .hunt-field{flex:1 1 100%}
+  .hunt-max{flex:1 1 100%}
+  .hunt-out{font-size:13px;padding:12px 2px}
+  .hero-stats{margin-top:26px}
 }
 
 /* Beeldvakken */
@@ -418,3 +428,22 @@ main>section:last-child{padding-bottom:110px}
 .hero .hero-note a{color:#fff}
 @media(max-width:560px){.hunt-row .bell{display:none}.hunt-max{flex-basis:100px}.hunt{padding:12px}}
 @media(max-width:560px){.hero-stats{flex-wrap:nowrap}.hero-stats>div{padding:0 14px}.hero-stats span{font-size:11.5px}}
+
+/* ===== Laptop en desktop ===== */
+@media(min-width:881px) and (max-height:820px){
+  .hero{padding-top:36px}
+  .hero h1{font-size:clamp(32px,3.9vw,52px)}
+  .hero-sub{font-size:22px}
+  .hunt{margin-top:22px}
+  .hunt-out{padding:10px 4px}
+  .hero-copy{padding-bottom:40px}
+  .hero-stats{margin-top:22px}
+}
+@media(min-width:881px) and (max-width:1100px){
+  .hero-grid{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:32px}
+  .wall{grid-template-columns:repeat(2,1fr)}
+  .wall-col:nth-child(3){display:none}
+}
+@media(min-width:1500px){
+  .hero h1{font-size:64px}
+}

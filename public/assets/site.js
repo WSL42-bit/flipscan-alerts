@@ -191,6 +191,30 @@
           col.innerHTML = '';
           list.concat(list).forEach(function (it) { col.appendChild(wallCard(it)); });
         });
+        // Mobiel: eerste kolom is een veegbare band die zelf doorschuift
+        var mq = window.matchMedia('(max-width:880px)');
+        var band = cols[0];
+        if (mq.matches && band) {
+          var cards = band.querySelectorAll('.dcard');
+          var half = Math.floor(cards.length / 2);
+          var dots = el('div', 'wall-dots'); var nd = Math.min(6, half);
+          for (var di = 0; di < nd; di++) dots.appendChild(el('i', di ? '' : 'on'));
+          wall.appendChild(dots);
+          var touched = false, idx2 = 0;
+          ['touchstart', 'pointerdown', 'wheel'].forEach(function (ev) { band.addEventListener(ev, function () { touched = true; }, { passive: true }); });
+          band.addEventListener('scroll', function () {
+            var w = cards[0].offsetWidth + 12;
+            var i2 = Math.round(band.scrollLeft / w) % nd;
+            Array.prototype.forEach.call(dots.children, function (d, k) { d.className = k === i2 ? 'on' : ''; });
+          }, { passive: true });
+          if (!reduce) setInterval(function () {
+            if (touched || document.hidden) return;
+            var w = cards[0].offsetWidth + 12;
+            idx2++;
+            if (idx2 >= half) { idx2 = 0; band.scrollTo({ left: 0, behavior: 'auto' }); return; }
+            band.scrollTo({ left: idx2 * w, behavior: 'smooth' });
+          }, 2600);
+        }
       }
 
       // Ticker bovenaan elke pagina
