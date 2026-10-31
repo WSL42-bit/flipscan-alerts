@@ -177,9 +177,9 @@ section.tight{padding:64px 0}
   .wall{order:1;display:block;height:auto;min-height:0;contain:none;overflow:visible;margin:0 -20px;-webkit-mask:none;mask:none}
   .wall-col{animation:none!important;transform:none!important}
   .wall-col:nth-child(n+2){display:none}
-  .wall-col:first-child{display:flex;flex-direction:row;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 20px 8px;scroll-padding:0 20px;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+  .wall-col:first-child{display:flex;flex-direction:row;gap:12px;overflow-x:auto;scroll-snap-type:none;padding:4px 20px 8px;scroll-padding:0 20px;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
   .wall-col:first-child::-webkit-scrollbar{display:none}
-  .wall .dcard{flex:0 0 58vw;max-width:250px;scroll-snap-align:start}
+  .wall .dcard{flex:0 0 52vw;max-width:230px}
   .wall .dcard:hover{transform:none}
   .dcard .meta{padding:9px 11px 11px}
   .dcard .meta b{font-size:13px}

@@ -159,6 +159,78 @@
     box.appendChild(g);
   }
 
+  // ---------- Hero dealmuur ----------
+  var wallSig = '';
+  var band = null, bandPos = 0, bandPauseUntil = 0;
+  function buildWall(items) {
+    var wall = document.getElementById('wall');
+    if (!wall || !items.length) return;
+    var sig = items.map(function (it) { return it.id; }).join('|');
+    if (sig === wallSig) return; // niks nieuws, niet onnodig opnieuw opbouwen
+    wallSig = sig;
+    var cols = wall.querySelectorAll('.wall-col');
+    var per = Math.max(4, Math.ceil(items.length / cols.length));
+    Array.prototype.forEach.call(cols, function (col, ci) {
+      var list = [];
+      for (var k = 0; k < per; k++) list.push(items[(ci * per + k) % items.length]);
+      col.innerHTML = '';
+      list.concat(list).forEach(function (it) { col.appendChild(wallCard(it)); });
+    });
+    if (window.matchMedia('(max-width:880px)').matches) startBand(cols[0]);
+  }
+
+  // Mobiel: één band die rustig doorloopt (scrollLeft via requestAnimationFrame, werkt ook in Safari).
+  // Zelf vegen kan altijd; daarna loopt hij na 3 seconden vanzelf verder.
+  function startBand(col) {
+    var first = !band;
+    band = col;
+    if (!first) return;
+    var pause = function () { bandPauseUntil = Date.now() + 3000; };
+    ['touchstart', 'touchmove', 'pointerdown', 'wheel'].forEach(function (ev) { col.addEventListener(ev, pause, { passive: true }); });
+    col.addEventListener('scroll', function () { if (Date.now() < bandPauseUntil) bandPos = col.scrollLeft; }, { passive: true });
+    if (reduce) return;
+    var last = performance.now();
+    var speed = 0.028; // px per ms, rustig tempo
+    (function loop(t) {
+      var dt = Math.min(64, t - last); last = t;
+      if (!document.hidden && Date.now() >= bandPauseUntil && band) {
+        var halfW = band.scrollWidth / 2;
+        bandPos += dt * speed;
+        if (halfW > 0 && bandPos >= halfW) bandPos -= halfW;
+        band.scrollLeft = bandPos;
+      }
+      requestAnimationFrame(loop);
+    })(last);
+  }
+
+  // Volgorde: afwisselen per zoekopdracht, zodat je niet 8x hetzelfde product ziet
+  function mixItems(data) {
+    var raw = (data.items || []).filter(function (it) { return it.image && it.price; });
+    var groups = {}, order = [];
+    raw.forEach(function (it) { if (!groups[it.query]) { groups[it.query] = []; order.push(it.query); } groups[it.query].push(it); });
+    var out = [];
+    for (var r = 0; out.length < raw.length; r++) order.forEach(function (q) { if (groups[q][r]) out.push(groups[q][r]); });
+    return out;
+  }
+
+  // Elke 90 sec verse deals ophalen en de muur, het grid en de zoekbalk bijwerken
+  function refreshLive() {
+    if (document.hidden) return;
+    fetch('/api/live-feed?t=' + Date.now()).then(function (r) { return r.json(); }).then(function (data) {
+      var items = mixItems(data);
+      if (!items.length) return;
+      HUNT_ITEMS = items;
+      buildWall(items);
+      var hl = document.getElementById('hero-live');
+      if (hl) hl.textContent = 'live · ' + (data.checked || items.length) + ' advertenties gecheckt';
+      var meta = document.getElementById('live-meta');
+      if (meta) meta.textContent = 'laatste check ' + ago(data.updatedAt) + (data.checked ? ' · ' + data.checked + ' advertenties bekeken' : '');
+      var grid = document.getElementById('live-grid');
+      if (grid) { grid.innerHTML = ''; items.slice(0, 8).forEach(function (it) { grid.appendChild(dealCard(it)); }); }
+    }).catch(function () {});
+  }
+  if (document.getElementById('wall')) setInterval(refreshLive, 90 * 1000);
+
   var needsLive = document.getElementById('ticker') || document.getElementById('wall') || document.getElementById('feed') || document.querySelector('[data-live]') || document.getElementById('live-grid');
   if (needsLive && window.fetch) {
     fetch('/api/live-feed').then(function (r) { return r.json(); }).then(function (data) {
@@ -180,42 +252,7 @@
       HUNT_ITEMS = items;
       if (window.__huntUpdate) window.__huntUpdate();
 
-      // Hero dealmuur: kolommen met echte advertenties, inhoud dubbel voor een naadloze loop
-      var wall = document.getElementById('wall');
-      if (wall) {
-        var cols = wall.querySelectorAll('.wall-col');
-        var per = Math.max(4, Math.ceil(items.length / cols.length));
-        Array.prototype.forEach.call(cols, function (col, ci) {
-          var list = [];
-          for (var k = 0; k < per; k++) list.push(items[(ci * per + k) % items.length]);
-          col.innerHTML = '';
-          list.concat(list).forEach(function (it) { col.appendChild(wallCard(it)); });
-        });
-        // Mobiel: eerste kolom is een veegbare band die zelf doorschuift
-        var mq = window.matchMedia('(max-width:880px)');
-        var band = cols[0];
-        if (mq.matches && band) {
-          var cards = band.querySelectorAll('.dcard');
-          var half = Math.floor(cards.length / 2);
-          var dots = el('div', 'wall-dots'); var nd = Math.min(6, half);
-          for (var di = 0; di < nd; di++) dots.appendChild(el('i', di ? '' : 'on'));
-          wall.appendChild(dots);
-          var touched = false, idx2 = 0;
-          ['touchstart', 'pointerdown', 'wheel'].forEach(function (ev) { band.addEventListener(ev, function () { touched = true; }, { passive: true }); });
-          band.addEventListener('scroll', function () {
-            var w = cards[0].offsetWidth + 12;
-            var i2 = Math.round(band.scrollLeft / w) % nd;
-            Array.prototype.forEach.call(dots.children, function (d, k) { d.className = k === i2 ? 'on' : ''; });
-          }, { passive: true });
-          if (!reduce) setInterval(function () {
-            if (touched || document.hidden) return;
-            var w = cards[0].offsetWidth + 12;
-            idx2++;
-            if (idx2 >= half) { idx2 = 0; band.scrollTo({ left: 0, behavior: 'auto' }); return; }
-            band.scrollTo({ left: idx2 * w, behavior: 'smooth' });
-          }, 2600);
-        }
-      }
+      buildWall(items);
 
       // Ticker bovenaan elke pagina
       var ticker = document.getElementById('ticker');
