@@ -24,7 +24,7 @@ a{color:inherit}
 :focus-visible{outline:3px solid var(--sun);outline-offset:3px;border-radius:6px}
 ::selection{background:var(--sun);color:var(--ink)}
 .wrap{max-width:var(--max);margin:0 auto;padding:0 20px}
-h1,h2,h3{font-family:var(--f-head);letter-spacing:-.045em;line-height:1.04;font-weight:700}
+h1,h2,h3{font-family:var(--f-head);letter-spacing:-.03em;line-height:1.1;font-weight:500}
 h1{font-size:clamp(36px,6vw,74px)}
 h2{font-size:clamp(28px,4vw,46px)}
 h3{font-size:19px;letter-spacing:-.025em}
@@ -36,7 +36,7 @@ h3{font-size:19px;letter-spacing:-.025em}
 .hl-mint{color:var(--mint)}
 
 /* Bel-logo */
-.bell{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--ink);flex:none}
+.bell{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#111319;flex:none}
 .bell svg{width:56%;height:56%}
 .bell.mint{background:var(--mint)}.bell.mint path{stroke:var(--ink)}
 .bell.blue{background:var(--accent)}
@@ -73,9 +73,9 @@ h3{font-size:19px;letter-spacing:-.025em}
 /* Header */
 .top{position:sticky;top:0;z-index:30;background:rgba(11,14,23,.97);color:#fff;border-bottom:1px solid var(--night-line)}
 .top .wrap{display:flex;align-items:center;justify-content:space-between;height:66px;gap:20px}
-.logo{display:flex;align-items:center;gap:10px;font:700 20px var(--f-head);text-decoration:none;letter-spacing:-.04em;color:#fff}
-.logo .bell{background:var(--mint)}.logo .bell path{stroke:var(--ink)}
-.logo small{font-size:11px;font-weight:700;color:var(--mint);letter-spacing:.08em;margin-left:-2px}
+.logo{display:flex;align-items:center;gap:10px;font:500 20px var(--f-head);text-decoration:none;letter-spacing:-.04em;color:#fff}
+.logo .bell,.top .bell,footer .bell,.hero .bell,.bg-night .bell,.sticky-cta .bell{background:#111319;box-shadow:inset 0 0 0 1px #2B3242}
+.logo small{font-size:11px;font-weight:500;color:var(--night-text);letter-spacing:.08em;margin-left:-2px}
 .logo-mark{width:30px;height:30px;border-radius:9px;background:var(--mint);display:grid;place-items:center}
 .logo-mark svg{width:16px;height:16px}.logo-mark path{stroke:var(--ink)}
 .nav{display:flex;gap:4px;align-items:center}
@@ -118,10 +118,10 @@ section.tight{padding:64px 0}
 .hero{background:var(--night) var(--dots);color:#fff;padding:56px 0 0;overflow:hidden;position:relative}
 .hero-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:44px;align-items:center;min-height:min(calc(100vh - 104px),760px)}
 .hero-grid>*{min-width:0}
-.hero h1{font-size:clamp(34px,4.7vw,66px)}
+.hero h1{font-size:clamp(32px,4.2vw,58px)}
 .hero-copy{padding:20px 0 72px;position:relative;z-index:2}
 .hero h1{margin-top:6px}
-.hero h1 .mark{color:var(--ink);background:var(--mint);padding:0 .14em;border-radius:.12em;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.hero h1 .mark{color:#C9CFDB;font-weight:400}
 .hero .lead{margin:22px 0 30px;color:var(--night-text)}
 .hero .eyebrow{color:#fff;background:var(--night-2);border:1px solid var(--night-line);border-radius:999px;padding:6px 14px 6px 6px;letter-spacing:.06em}
 .hero .eyebrow .bell{width:24px;height:24px;border-radius:7px}
@@ -133,8 +133,9 @@ section.tight{padding:64px 0}
 .hero .chip{background:var(--night-2);border-color:var(--night-line);color:#fff}
 .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
 .dot.mp{background:var(--mp)}.dot.vi{background:var(--vi)}.dot.eb{background:var(--eb)}
-.hero-stats{display:flex;gap:28px;margin-top:30px;flex-wrap:wrap}
-.hero-stats b{display:block;font-size:28px;letter-spacing:-.05em;color:var(--sun);line-height:1}
+.hero-stats{display:flex;gap:0;margin-top:34px;flex-wrap:wrap}
+.hero-stats>div{padding:0 22px;border-left:1px solid var(--night-line)}.hero-stats>div:first-child{padding-left:0;border-left:0}
+.hero-stats b{display:block;font-size:20px;font-weight:500;letter-spacing:-.02em;color:#fff;line-height:1.2}
 .hero-stats span{font-size:12.5px;color:var(--night-text)}
 
 /* Deal-muur: kolommen die rustig omhoog en omlaag schuiven */
@@ -239,7 +240,7 @@ section.tight{padding:64px 0}
 /* Cijfers */
 .stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(255,255,255,.18)}
 .stat{padding:32px 24px 0 0}
-.stat b{font:700 clamp(44px,5.5vw,68px)/1 var(--f-head);display:block;letter-spacing:-.05em;color:var(--sun)}
+.stat b{font:500 clamp(40px,5vw,60px)/1 var(--f-head);display:block;letter-spacing:-.04em;color:#fff}
 .stat b i{font-style:normal}
 .stat span{color:inherit;opacity:.8;font-size:15px;display:block;margin-top:10px}
 @media(max-width:720px){.stats{grid-template-columns:1fr}.stat{padding:24px 0 0}}
@@ -256,7 +257,7 @@ input[type=range]{width:100%;accent-color:var(--accent);height:28px}
 .seg button{font:700 14px var(--f-body);padding:12px 8px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--card);cursor:pointer;color:var(--ink-2);transition:transform .15s}
 .seg button:hover{transform:translateY(-2px)}
 .seg button[aria-pressed=true]{border-color:var(--ink);background:var(--ink);color:#fff}
-.big{font:700 clamp(48px,6.5vw,76px)/1 var(--f-head);letter-spacing:-.05em;color:var(--sun)}
+.big{font:500 clamp(46px,6vw,70px)/1 var(--f-head);letter-spacing:-.04em;color:#fff}
 .calc-out .row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.22);font-size:15px;color:#DCE2FF}
 .calc-out .row b{color:#fff}
 .calc-out .btn{background:var(--sun);color:var(--ink);border-color:var(--sun)}
@@ -269,7 +270,7 @@ input[type=range]{width:100%;accent-color:var(--accent);height:28px}
 .plan.best .muted,.plan.best .per,.plan.best .amount small{color:var(--night-text)}
 .plan.best .check li{border-color:var(--night-line)}
 .plan .badge{position:absolute;top:-13px;left:28px;background:var(--sun);color:var(--ink);font-size:13px;font-weight:700;padding:4px 12px;border-radius:999px}
-.amount{font:700 56px/1 var(--f-head);letter-spacing:-.05em;margin:18px 0 6px}
+.amount{font:500 54px/1 var(--f-head);letter-spacing:-.04em;margin:18px 0 6px}
 .amount small{font:500 16px var(--f-body);color:var(--muted);letter-spacing:0}
 .plan .check{margin:22px 0 26px}
 .plan .btn{width:100%}

@@ -210,7 +210,7 @@
           ping.innerHTML = '';
           ping.appendChild(pic(it));
           var d = el('div');
-          var sm = el('small'); sm.innerHTML = '<span class="bell" style="width:16px;height:16px;border-radius:5px">' + BELL + '</span>FlipScan · nu';
+          var sm = el('small'); sm.innerHTML = '<span class="bell" style="width:16px;height:16px;border-radius:5px;border:0">' + BELL + '</span>FlipScan · nu';
           d.appendChild(sm); d.appendChild(el('b', null, it.title)); d.appendChild(el('em', null, euro(it.price) + ' · ' + LABEL[it.platform]));
           ping.appendChild(d);
           ping.classList.add('show');
