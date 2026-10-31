@@ -176,6 +176,10 @@
       var hl = document.getElementById('hero-live');
       if (hl) hl.textContent = 'live · ' + (data.checked || items.length) + ' advertenties gecheckt';
 
+      // Zoekbalk in de hero: telt live hoeveel deals uit de laatste check passen
+      HUNT_ITEMS = items;
+      if (window.__huntUpdate) window.__huntUpdate();
+
       // Hero dealmuur: kolommen met echte advertenties, inhoud dubbel voor een naadloze loop
       var wall = document.getElementById('wall');
       if (wall) {
@@ -263,6 +267,42 @@
     var onScroll = function () { sticky.classList.toggle('show', window.scrollY > 650 && (window.innerHeight + window.scrollY) < document.body.scrollHeight - 300); };
     window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
   }
+  // ---------- Hero zoekbalk ----------
+  var HUNT_ITEMS = [];
+  var hq = document.getElementById('hunt-q'), hm = document.getElementById('hunt-max'), ho = document.getElementById('hunt-out');
+  if (hq && ho) {
+    var baseText = ho.innerHTML;
+    var esc2 = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    window.__huntUpdate = function () {
+      var q = hq.value.trim().toLowerCase(), max = parseInt((hm && hm.value) || '', 10);
+      if (q.length < 2) { ho.innerHTML = baseText; return; }
+      var words = q.split(/\s+/).filter(function (w) { return w.length > 1; });
+      var hits = HUNT_ITEMS.filter(function (it) {
+        var t = it.title.toLowerCase();
+        return words.every(function (w) { return t.indexOf(w) !== -1; }) && (!max || it.price <= max);
+      });
+      var label = '<b>' + esc2(hq.value.trim()) + '</b>' + (max ? ' tot €' + max : '');
+      ho.innerHTML = hits.length
+        ? 'In onze laatste check stonden <b>' + hits.length + '</b> advertenties voor ' + label + ', de goedkoopste voor <b>' + euro(Math.min.apply(null, hits.map(function (h) { return h.price; }))) + '</b>. Met een melding zie je de volgende als eerste.'
+        : 'Je krijgt een melding zodra er een nieuwe advertentie voor ' + label + ' online komt op Marktplaats, Vinted of eBay.';
+    };
+    hq.addEventListener('input', window.__huntUpdate);
+    if (hm) hm.addEventListener('input', function () { hm.value = hm.value.replace(/\D/g, ''); window.__huntUpdate(); });
+    // Voorbeeldzoektermen typen zichzelf in de placeholder zolang het veld leeg is
+    if (!reduce) {
+      var ex = [['iphone 13', '300'], ['nike dunk', '80'], ['playstation 5', '350'], ['dyson', '200'], ['lego star wars', '150']], ei = 0, ci = 0, del = false;
+      setInterval(function () {
+        if (hq.value || document.activeElement === hq) return;
+        var w = ex[ei][0];
+        ci += del ? -1 : 1;
+        hq.placeholder = w.slice(0, Math.max(0, ci)) || ' ';
+        if (hm && !hm.value) hm.placeholder = ex[ei][1];
+        if (!del && ci >= w.length + 8) del = true;
+        if (del && ci <= 0) { del = false; ei = (ei + 1) % ex.length; }
+      }, 110);
+    }
+  }
+
   // Scroll reveal en optellende cijfers
   var revealEls = document.querySelectorAll('.reveal, [data-count]');
   if ('IntersectionObserver' in window && !reduce) {

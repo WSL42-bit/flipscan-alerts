@@ -1,15 +1,25 @@
 <section class="hero">
   <div class="wrap hero-grid">
     <div class="hero-copy">
-      <span class="eyebrow"><span class="bell">{{BELL}}</span><span class="live-pill" id="hero-live">live deals laden</span></span>
-      <h1>Goede deals zijn binnen minuten weg. <span class="mark">Jij bent er eerst.</span></h1>
-      <p class="lead">FlipScan houdt Marktplaats, Vinted en eBay voor je in de gaten en stuurt een Telegram melding zodra er iets nieuws verschijnt dat past bij jouw zoekopdracht.</p>
-      <a class="founder" data-founder href="/prijzen" hidden><b>Founder deal</b> <span>De eerste 100 abonnees betalen €9,99 per maand. Nog <b data-founder-left>…</b> plekken.</span></a>
-      <div class="actions">
-        <a class="btn mint" href="https://t.me/{{BOT}}?start=web">Probeer 2 dagen gratis</a>
-        <a class="btn line" href="/hoe-het-werkt">Hoe het werkt</a>
+      <div class="hero-src">
+        <span class="hero-plats"><i class="dot mp"></i>Marktplaats <i class="dot vi"></i>Vinted <i class="dot eb"></i>eBay</span>
+        <span class="live-pill" id="hero-live">live</span>
       </div>
-      <p class="hero-note">Daarna €14,99 per maand of €4,99 per week. Zeg je binnen 2 dagen op, dan betaal je niks.</p>
+      <h1>Goede deals zijn binnen minuten weg.</h1>
+      <p class="hero-sub">Met FlipScan zie jij ze als eerste.</p>
+
+      <div class="hunt" role="group" aria-label="Probeer een zoekopdracht">
+        <div class="hunt-row">
+          <span class="bell">{{BELL}}</span>
+          <label class="hunt-field"><small>Waar jaag je op?</small><input id="hunt-q" type="text" maxlength="60" placeholder="iphone 13" autocomplete="off"></label>
+          <label class="hunt-field hunt-max"><small>Max prijs</small><span><i>€</i><input id="hunt-max" type="text" inputmode="numeric" maxlength="5" placeholder="300"></span></label>
+        </div>
+        <div class="hunt-out" id="hunt-out" aria-live="polite">Wij checken Marktplaats, Vinted en eBay elke 30 seconden en sturen je binnen een minuut een Telegram melding als er iets nieuws past.</div>
+        <a class="btn sky hunt-go" href="https://t.me/{{BOT}}?start=web">Zet mijn melding aan, 2 dagen gratis</a>
+      </div>
+
+      <a class="founder" data-founder href="/prijzen" hidden><b>Founder deal</b> <span>De eerste 100 abonnees betalen €9,99 per maand. Nog <b data-founder-left>…</b> plekken.</span></a>
+      <p class="hero-note">Daarna €14,99 per maand of €4,99 per week. Zeg je binnen 2 dagen op, dan betaal je niks. <a href="/hoe-het-werkt">Zo werkt het</a></p>
       <div class="hero-stats">
         <div><b data-count="30">30</b><span>sec tussen checks</span></div>
         <div><b>3</b><span>platforms</span></div>
