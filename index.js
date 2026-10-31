@@ -297,7 +297,12 @@ app.get('/health', function (req, res) { res.json({ ok: true }); });
 app.get('/api/live-feed', function (req, res) {
   var c = livefeed.get();
   res.set('Cache-Control', 'public, max-age=60');
-  res.json({ updatedAt: c.updatedAt, checked: c.checked, items: c.items });
+  var stats = c.stats || {};
+  var items = c.items.map(function (it) {
+    var st = stats[it.query];
+    return st ? Object.assign({}, it, { median: st.median }) : it;
+  });
+  res.json({ updatedAt: c.updatedAt, checked: c.checked, items: items });
 });
 
 // ---------- Start ----------

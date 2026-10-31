@@ -6,6 +6,8 @@ function read(f) { return fs.readFileSync(path.join(PUB, f), 'utf8'); }
 
 var SITE = require('./origin')();
 var HAS_APERCU = fs.existsSync(path.join(PUB, 'assets/fonts/ApercuMonoPro-Regular.woff2'));
+// Het bel-logo (zelfde als favicon), te gebruiken als {{BELL}} in alle pagina's
+var BELL_SVG = '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 11.5V6.5a5 5 0 0 1 10 0v5l1.5 1.5h-13L3 11.5Z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>';
 var BOT = process.env.TELEGRAM_BOT_USERNAME || 'FlipScanAlertsBot';
 
 function head(title, desc, urlPath) {
@@ -31,6 +33,7 @@ function fill(html, nav) {
   var header = read('partials/header.html');
   if (nav) header = header.replace('data-nav="' + nav + '"', 'data-nav="' + nav + '" aria-current="page"');
   return html.replace('{{HEADER}}', header).replace('{{FOOTER}}', read('partials/footer.html')).replace(/\{\{BOT\}\}/g, BOT)
+    .replace(/\{\{BELL\}\}/g, BELL_SVG)
     .replace(/\/assets\/site\.(css|js)"/g, function (m, ext) { return '/assets/site.' + ext + '?v=' + VERSION[ext] + '"'; });
 }
 

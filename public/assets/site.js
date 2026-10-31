@@ -78,6 +78,7 @@
 
   // ---------- Echte advertenties (live uit /api/live-feed) ----------
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var BELL = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 11.5V6.5a5 5 0 0 1 10 0v5l1.5 1.5h-13L3 11.5Z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>';
   var LABEL = { marktplaats: 'Marktplaats', vinted: 'Vinted', ebay: 'eBay' };
   var DOT = { marktplaats: 'mp', vinted: 'vi', ebay: 'eb' };
   function euro(n) { return '€ ' + (Math.round(n * 100) / 100).toLocaleString('nl-NL', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }); }
@@ -107,9 +108,30 @@
     return a;
   }
 
+  // Korting t.o.v. de gemiddelde vraagprijs van vergelijkbare advertenties (alleen tonen als het echt scheelt)
+  function offText(it) {
+    if (!it.median || !it.price) return '';
+    var pct = Math.round((1 - it.price / it.median) * 100);
+    return pct >= 10 && pct <= 70 ? pct + '% onder gem.' : '';
+  }
+
+  // Kaart voor de dealmuur in de hero
+  function wallCard(it) {
+    var a = el('a', 'dcard'); a.href = it.url; a.target = '_blank'; a.rel = 'noopener nofollow';
+    var p = el('div', 'pic'); var im = pic(it); im.loading = 'lazy'; p.appendChild(im);
+    p.appendChild(el('span', 'price', euro(it.price)));
+    var off = offText(it); if (off) p.appendChild(el('span', 'off', off));
+    a.appendChild(p);
+    var m = el('div', 'meta'); m.appendChild(el('b', null, it.title));
+    var w = el('span'); w.appendChild(el('i', 'dot ' + DOT[it.platform])); w.appendChild(document.createTextNode(where(it))); m.appendChild(w);
+    a.appendChild(m);
+    return a;
+  }
+
   function dealCard(it) {
     var a = el('a', 'deal'); a.href = it.url; a.target = '_blank'; a.rel = 'noopener nofollow';
     var p = el('div', 'pic'); p.appendChild(pic(it)); a.appendChild(p);
+    var off = offText(it); if (off) p.appendChild(el('span', 'off', off));
     var b = el('div', 'body');
     b.appendChild(el('span', 'p', euro(it.price)));
     b.appendChild(el('span', 't', it.title));
@@ -137,7 +159,7 @@
     box.appendChild(g);
   }
 
-  var needsLive = document.getElementById('feed') || document.querySelector('[data-live]') || document.getElementById('live-grid');
+  var needsLive = document.getElementById('ticker') || document.getElementById('wall') || document.getElementById('feed') || document.querySelector('[data-live]') || document.getElementById('live-grid');
   if (needsLive && window.fetch) {
     fetch('/api/live-feed').then(function (r) { return r.json(); }).then(function (data) {
       var raw = (data.items || []).filter(function (it) { return it.image && it.price; });
@@ -151,6 +173,52 @@
       // Statusregels
       var meta = document.getElementById('live-meta');
       if (meta) meta.textContent = 'laatste check ' + ago(data.updatedAt) + (data.checked ? ' · ' + data.checked + ' advertenties bekeken' : '');
+      var hl = document.getElementById('hero-live');
+      if (hl) hl.textContent = 'live · ' + (data.checked || items.length) + ' advertenties gecheckt';
+
+      // Hero dealmuur: kolommen met echte advertenties, inhoud dubbel voor een naadloze loop
+      var wall = document.getElementById('wall');
+      if (wall) {
+        var cols = wall.querySelectorAll('.wall-col');
+        var per = Math.max(4, Math.ceil(items.length / cols.length));
+        Array.prototype.forEach.call(cols, function (col, ci) {
+          var list = [];
+          for (var k = 0; k < per; k++) list.push(items[(ci * per + k) % items.length]);
+          col.innerHTML = '';
+          list.concat(list).forEach(function (it) { col.appendChild(wallCard(it)); });
+        });
+      }
+
+      // Ticker bovenaan elke pagina
+      var ticker = document.getElementById('ticker');
+      if (ticker) {
+        var frag = items.slice(0, 14).map(function (it) {
+          return '<a href="' + it.url.replace(/"/g, '%22') + '" target="_blank" rel="noopener nofollow"><span class="new">NIEUW</span>' +
+            it.title.replace(/[<>&]/g, '').slice(0, 42) + ' · ' + euro(it.price) + ' · ' + LABEL[it.platform] + '</a>';
+        }).join('');
+        ticker.innerHTML = frag + frag;
+      }
+
+      // Pop-up melding in de hero, zoals een Telegram notificatie
+      var ping = document.getElementById('ping');
+      if (ping && !reduce) {
+        var pi = 0;
+        var showPing = function () {
+          if (document.hidden) return;
+          var it = items[(pi++ * 5 + 3) % items.length];
+          ping.href = it.url; ping.target = '_blank'; ping.rel = 'noopener nofollow';
+          ping.innerHTML = '';
+          ping.appendChild(pic(it));
+          var d = el('div');
+          var sm = el('small'); sm.innerHTML = '<span class="bell" style="width:16px;height:16px;border-radius:5px">' + BELL + '</span>FlipScan · nu';
+          d.appendChild(sm); d.appendChild(el('b', null, it.title)); d.appendChild(el('em', null, euro(it.price) + ' · ' + LABEL[it.platform]));
+          ping.appendChild(d);
+          ping.classList.add('show');
+          setTimeout(function () { ping.classList.remove('show'); }, 3600);
+        };
+        setTimeout(showPing, 2200);
+        setInterval(showPing, 7000);
+      }
 
       // Grid met echte deals
       var grid = document.getElementById('live-grid');
@@ -162,6 +230,7 @@
         var pl = box.getAttribute('data-platform');
         var pool = pl ? items.filter(function (it) { return it.platform === pl; }) : items.slice(used).concat(items.slice(0, used));
         if (!pl) used = (used + (+box.getAttribute('data-live') || 3)) % items.length;
+        if (!pool.length) pool = items.slice(used).concat(items.slice(0, used));
         if (pool.length) mosaic(box, pool);
       });
 
@@ -181,6 +250,7 @@
         }, 3800);
       }
     }).catch(function () {
+      var wl = document.getElementById('wall'); if (wl) wl.style.display = 'none';
       var s = document.getElementById('live');
       if (s) s.style.display = 'none';
       var st = document.getElementById('feed-status'); if (st) st.textContent = 'meldingen';
@@ -192,5 +262,29 @@
   if (sticky) {
     var onScroll = function () { sticky.classList.toggle('show', window.scrollY > 650 && (window.innerHeight + window.scrollY) < document.body.scrollHeight - 300); };
     window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  }
+  // Scroll reveal en optellende cijfers
+  var revealEls = document.querySelectorAll('.reveal, [data-count]');
+  if ('IntersectionObserver' in window && !reduce) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        io.unobserve(e.target);
+        e.target.classList.add('in');
+        var to = +e.target.getAttribute('data-count');
+        if (to) {
+          var t0 = performance.now();
+          var step = function (t) {
+            var k = Math.min(1, (t - t0) / 900);
+            e.target.textContent = Math.round(to * (1 - Math.pow(1 - k, 3)));
+            if (k < 1) requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
+        }
+      });
+    }, { threshold: 0.15 });
+    Array.prototype.forEach.call(revealEls, function (n) { io.observe(n); });
+  } else {
+    Array.prototype.forEach.call(document.querySelectorAll('.reveal'), function (n) { n.classList.add('in'); });
   }
 })();
