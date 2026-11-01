@@ -7,126 +7,224 @@
 <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css">
 <style>
-/* Dashboard bovenop site.css, zelfde lichte stijl */
-.dash{max-width:780px;margin:0 auto;padding:40px 20px 60px}
-.dash .card{margin-bottom:16px;padding:24px}
-.dash h2{font-size:21px;margin-bottom:14px}
-.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-.muted{font-size:14px}
-.badge{background:var(--accent-soft);color:var(--accent);padding:4px 12px;border-radius:99px;font-size:13px;font-weight:600}
-.dash button{font:600 15px var(--f-body);cursor:pointer;border:2px solid var(--ink);border-radius:999px;padding:10px 18px;background:var(--ink);color:#fff}
-.dash button:hover{background:var(--accent);border-color:var(--accent)}
+/* ===== Dashboard v3: lijst + editor. Desktop naast elkaar, mobiel lijst met editor als eigen scherm ===== */
+.dash{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.topbar h1{font-size:28px;font-weight:500;letter-spacing:-.03em}
+.topbar .who{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.status{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;background:var(--accent-soft);color:var(--deep)}
+.status::before{content:"";width:8px;height:8px;border-radius:50%;background:#2DBE7E}
+.status.off{background:#F4E9D2;color:var(--ink-2)}.status.off::before{background:#C9A75B}
+.topbar .acts{display:flex;gap:8px}
+.dash button{font:600 14.5px var(--f-body);cursor:pointer;border:1px solid var(--deep);border-radius:999px;padding:10px 18px;background:var(--deep);color:#fff;transition:background .15s,border-color .15s}
+.dash button:hover{background:#0A729F}
 .dash button.ghost{background:#fff;color:var(--ink);border-color:var(--line)}
-.dash button.ghost:hover{border-color:var(--ink)}
-.dash button.danger{background:#fff;color:#C2261E;border-color:#F3C9C6}
+.dash button.ghost:hover{border-color:var(--ink-2)}
+.dash button.danger{background:transparent;color:#B42318;border-color:transparent;padding:10px 6px}
 .dash button:disabled{opacity:.5;cursor:default}
-.dash input{font:inherit;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:var(--r-sm);padding:12px 14px;width:100%}
-.dash input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-label.small{font-size:13px;color:var(--ink-2);display:block;margin-bottom:6px;font-weight:600}
-label .opt{font-weight:400;color:var(--muted)}
-.tpl-wrap{margin:4px 0 18px}
-.tpls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.dash .tpl{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:7px 14px;font:500 13.5px var(--f-body);cursor:pointer;color:var(--ink)}
-.dash .tpl:hover{border-color:var(--deep);background:var(--accent-soft)}
-.chips-in{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--line);background:#fff;border-radius:var(--r-sm);padding:7px 8px;cursor:text}
-.chips-in:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.chips-in input{border:0!important;box-shadow:none!important;padding:6px 4px!important;flex:1;min-width:150px;width:auto!important}
+.dash input{font:inherit;font-size:15px;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:12px 14px;width:100%}
+.dash input:focus{outline:none;border-color:var(--deep);box-shadow:0 0 0 3px var(--accent-soft)}
+.panel{background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:16px}
+.panel h2{font-size:17px;font-weight:600;letter-spacing:-.02em}
+.muted{font-size:13.5px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+
+.dgrid{display:grid;grid-template-columns:380px minmax(0,1fr);gap:20px;align-items:start}
+.side{min-width:0}
+
+/* Lijst */
+.lhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.lhead small{color:var(--muted);font-size:12.5px}
+.sitem{display:flex;align-items:center;gap:12px;padding:14px 10px;margin:0 -10px;border-radius:14px;cursor:pointer;transition:background .15s}
+.sitem:hover{background:var(--paper)}
+.sitem.sel{background:var(--accent-soft)}
+.sitem .txt{flex:1;min-width:0}
+.sitem b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sitem .sum{display:block;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.sitem.paused b{color:var(--muted)}
+.empty{padding:22px 4px;color:var(--muted);font-size:14px}
+.add-btn{width:100%;margin-top:10px}
+
+/* Schakelaar */
+.sw{position:relative;width:42px;height:24px;flex:none}
+.sw input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+.sw span{position:absolute;inset:0;border-radius:999px;background:#D9D2C2;transition:background .2s}
+.sw span::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.sw input:checked+span{background:var(--deep)}
+.sw input:checked+span::after{transform:translateX(18px)}
+
+/* Editor */
+.editor{padding:0;background:#fff;border:1px solid var(--line);border-radius:20px;position:sticky;top:86px;display:flex;flex-direction:column;max-height:calc(100vh - 106px)}
+.ed-head{display:flex;align-items:center;gap:10px;padding:18px 24px;border-bottom:1px solid var(--line)}
+.ed-head h2{font-size:18px;font-weight:600;flex:1;letter-spacing:-.02em}
+.ed-close{display:none}
+.ed-body{padding:6px 24px 10px;overflow:auto}
+.step{padding:18px 0;border-bottom:1px solid #F2EBDA}
+.step:last-child{border-bottom:0}
+.step h3{font-size:14px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.step h3 i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--deep);color:#fff;display:grid;place-items:center;font-size:12px}
+.step p.hint{font-size:12.5px;color:var(--muted);margin:0 0 10px 32px}
+.step .in{margin-left:32px}
+.tpls{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.dash .tpl{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:6px 13px;font:500 13px var(--f-body);color:var(--ink)}
+.dash .tpl:hover,.dash .tpl.on{border-color:var(--deep);background:var(--accent-soft);color:var(--deep)}
+.chips-in{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--line);background:#fff;border-radius:12px;padding:6px 8px;cursor:text;min-height:48px}
+.chips-in:focus-within{border-color:var(--deep);box-shadow:0 0 0 3px var(--accent-soft)}
+.chips-in input{border:0!important;box-shadow:none!important;padding:6px 4px!important;flex:1;min-width:140px;width:auto!important}
 .chips{display:contents}
-.chip-x{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--deep);border-radius:999px;padding:5px 6px 5px 12px;font-size:13.5px;font-weight:600}
-.dash .chip-x button{all:unset;cursor:pointer;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:14px;line-height:1}
+.chip-x{display:inline-flex;align-items:center;gap:4px;background:var(--accent-soft);color:var(--deep);border-radius:999px;padding:5px 5px 5px 12px;font-size:13.5px;font-weight:600}
+.dash .chip-x button{all:unset;cursor:pointer;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:15px;line-height:1}
 .dash .chip-x button:hover{background:rgba(0,0,0,.08)}
 .ex .chip-x{background:#FDE7E3;color:#A3261A}
 .sugs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.dash .sug{all:unset;cursor:pointer;font-size:12.5px;color:var(--muted);border:1px dashed var(--line);border-radius:999px;padding:4px 10px}
+.dash .sug{all:unset;cursor:pointer;font-size:12.5px;color:var(--ink-2);border:1px dashed #DCCFAE;border-radius:999px;padding:4px 10px}
 .dash .sug:hover{color:#A3261A;border-color:#E9A79D}
-.preview{margin-top:16px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r-sm);padding:14px 16px;font-size:13.5px;color:var(--ink-2)}
-.preview b{color:var(--deep)}
-.s .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
-.s .tags span{font-size:12px;background:var(--accent-soft);color:var(--deep);border-radius:999px;padding:2px 9px}
-.s .tags span.no{background:#FDE7E3;color:#A3261A}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.plats{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
-.plat{border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:14px;font-weight:500;cursor:pointer;user-select:none;background:#fff}
-.plat.on{border-color:var(--ink);background:var(--ink);color:#fff}
+.price{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.price label{position:relative;display:block}
+.price small{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+.price span{position:absolute;left:14px;bottom:13px;color:var(--muted)}
+.price input{padding-left:30px}
+.plats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.plat{border:1px solid var(--line);border-radius:12px;padding:12px 10px;font-size:14px;font-weight:600;cursor:pointer;user-select:none;background:#fff;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s}
+.plat i{width:9px;height:9px;border-radius:50%}
+.plat.on{border-color:var(--deep);background:var(--deep);color:#fff}
 .plat.locked{opacity:.4;cursor:not-allowed}
-.s{border-top:1px solid var(--line);padding:16px 0}.s:first-child{border-top:0}
-.s b{font-size:16px}.s .actions{display:flex;gap:8px}
-.s .actions button{padding:7px 14px;font-size:13px}
-.err{color:#C2261E;font-size:14px;margin-top:10px;min-height:20px}
-.dash .plans{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;max-width:none}
-.dash .plan{border:1px solid var(--line);border-radius:var(--r);padding:18px}
-.dash .plan .p{font:700 28px var(--f-head);margin:6px 0 8px}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;font-weight:600;display:none}
-#login{text-align:center;padding:80px 20px}
+details.more summary{list-style:none;cursor:pointer;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::after{content:"+";margin-left:auto;width:24px;height:24px;border-radius:50%;background:var(--paper);display:grid;place-items:center;font-weight:400}
+details.more[open] summary::after{content:"−"}
+details.more summary i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--deep);color:#fff;display:grid;place-items:center;font-size:12px}
+details.more summary em{font-style:normal;font-weight:400;font-size:12.5px;color:var(--muted)}
+.ed-foot{border-top:1px solid var(--line);padding:14px 24px 18px;background:#fff;border-radius:0 0 20px 20px}
+.preview{font-size:13px;color:var(--ink-2);line-height:1.5;margin-bottom:12px}
+.preview b{color:var(--deep)}
+.ed-btns{display:flex;gap:8px;align-items:center}
+.ed-btns #save{flex:1;padding:13px 18px}
+.err{color:#B42318;font-size:13.5px;margin-top:8px;min-height:0}
+.err:empty{display:none}
+
+/* Abonnement en vrienden (compact in de zijkolom) */
+.dash .plans{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px;max-width:none}
+.dash .plan{border:1px solid var(--line);border-radius:16px;padding:16px}
+.dash .plan .p{font:500 26px var(--f-head);margin:4px 0 6px}
+.badge{background:var(--accent-soft);color:var(--deep);padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}
+.upsell{margin-top:14px;border-radius:16px;padding:16px;display:block;background:var(--deep);color:#fff}
+.upsell p{color:#D6ECF8;font-size:13px;margin:6px 0 12px}
+.upsell button{background:var(--sky)!important;border-color:var(--sky)!important;color:var(--ink)!important}
+.refrow{display:flex;gap:8px;margin-top:12px}
+.refrow input{font-size:13px}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;font-weight:600;display:none;z-index:80;font-size:14px}
+#login{text-align:center;padding:80px 20px;max-width:460px;margin:0 auto}
 #logout{display:none}
-@media(max-width:600px){.grid2,.dash .plans{grid-template-columns:1fr}}
+
+/* ===== Mobiel ===== */
+@media(max-width:900px){
+  .dash{padding:18px 16px 110px}
+  .topbar{margin-bottom:16px}
+  .topbar h1{font-size:22px}
+  .topbar .acts button{padding:8px 14px;font-size:13px}
+  .dgrid{grid-template-columns:1fr;gap:0}
+  .panel{border-radius:18px;padding:16px}
+  .sitem{padding:14px 8px;margin:0 -8px}
+  /* Editor als eigen scherm dat omhoog schuift */
+  .editor{position:fixed;inset:0;top:0;z-index:70;border-radius:0;border:0;max-height:none;transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1);visibility:hidden}
+  .editor.open{transform:none;visibility:visible}
+  .ed-head{padding:14px 16px;position:sticky;top:0;background:#fff;z-index:2}
+  .ed-close{display:grid;place-items:center;width:38px;height:38px;padding:0!important;border-radius:50%!important;background:var(--paper)!important;color:var(--ink)!important;border:0!important;font-size:18px!important}
+  .ed-body{padding:0 16px 20px;flex:1}
+  .step .in,.step p.hint{margin-left:0}
+  .step h3{margin-bottom:8px}
+  .ed-foot{padding:12px 16px calc(14px + env(safe-area-inset-bottom));border-radius:0;box-shadow:0 -8px 24px -18px rgba(0,0,0,.3)}
+  .plats{grid-template-columns:repeat(3,1fr)}
+  .plat{padding:11px 6px;font-size:13px}
+  .add-btn{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));width:auto;z-index:50;padding:15px!important;font-size:15px!important;box-shadow:0 12px 30px -12px rgba(8,98,136,.7)}
+  body.noscroll{overflow:hidden}
+}
 </style>
 </head>
 <body>
 {{HEADER}}
 <div class="dash">
-  <div class="row" style="margin-bottom:20px"><h1 style="font-size:34px">Dashboard</h1><button class="ghost" id="logout">Uitloggen</button></div>
-
   <div id="login" style="display:none">
-    <h2>Log in via Telegram</h2>
-    <p class="muted" style="margin:10px 0 24px">Stuur /login naar de bot en tik op de knop.</p>
+    <h1 style="font-size:28px;font-weight:500">Log in via Telegram</h1>
+    <p class="muted" style="margin:12px 0 24px">Stuur /login naar de bot en tik op de knop. Je bent dan meteen ingelogd.</p>
     <a class="btn blue" href="https://t.me/{{BOT}}?start=web">Open Telegram</a>
   </div>
 
   <div id="app" style="display:none">
-    <div class="card">
-      <div class="row">
-        <div><h2 style="margin:0" id="hello">Hoi</h2><span class="muted" id="planinfo"></span></div>
-        <div class="row"><span class="badge" id="tierbadge"></span><button class="ghost" id="pause"></button></div>
-      </div>
+    <div class="topbar">
+      <div class="who"><h1 id="hello">Hoi</h1><span class="status" id="planinfo"></span><span class="badge" id="tierbadge" hidden></span></div>
+      <div class="acts"><button class="ghost" id="pause"></button><button class="ghost" id="logout">Uitloggen</button></div>
     </div>
 
-    <div class="card">
-      <h2 id="formtitle">Nieuwe zoekopdracht</h2>
-      <div class="tpl-wrap"><span class="small muted">Snel starten met een sjabloon:</span><div class="tpls" id="tpls"></div></div>
+    <div class="dgrid">
+      <aside class="side">
+        <div class="panel">
+          <div class="lhead"><h2>Je zoekopdrachten</h2><small id="count"></small></div>
+          <div id="list"></div>
+          <button class="add-btn" id="addbtn">+ Nieuwe zoekopdracht</button>
+        </div>
+        <div class="panel" id="billing"><h2>Abonnement</h2><div id="billingbody"></div></div>
+        <div class="panel" id="friends" style="display:none">
+          <h2>Vrienden uitnodigen</h2>
+          <p class="muted" style="margin-top:6px">Je vriend krijgt 7 dagen gratis. Wordt hij abonnee, dan krijg jij €4,99 tegoed.</p>
+          <div class="refrow"><input id="reflink" readonly><button id="copyref">Kopieer</button></div>
+          <p class="muted" id="refstats" style="margin-top:8px"></p>
+        </div>
+      </aside>
 
-      <label class="small" for="sname">Naam <span class="opt">(optioneel)</span></label>
-      <input id="sname" placeholder="bijv. iPhones om te flippen" maxlength="40">
-
-      <label class="small" style="margin-top:16px">Zoektermen <span class="opt">max 5, elke term wordt apart gezocht</span></label>
-      <div class="chips-in" id="terms-box"><div class="chips" id="terms"></div><input id="term-in" placeholder="typ een term en druk op Enter" maxlength="60"></div>
-
-      <label class="small" style="margin-top:16px">Uitsluiten <span class="opt">advertenties met deze woorden sla je over</span></label>
-      <div class="chips-in ex" id="ex-box"><div class="chips" id="excl"></div><input id="ex-in" placeholder="bijv. defect, icloud, mini" maxlength="40"></div>
-      <div class="sugs" id="ex-sugs"></div>
-
-      <div class="plats" id="plats"></div>
-      <div class="grid2">
-        <div><label class="small">Min prijs (€)</label><input id="min" type="number" min="0" placeholder="0"></div>
-        <div><label class="small">Max prijs (€)</label><input id="max" type="number" min="0" placeholder="geen max"></div>
-      </div>
-      <div class="preview" id="preview"></div>
-      <div class="row" style="margin-top:16px"><button id="save">Opslaan</button><button class="ghost" id="cancel" style="display:none">Annuleren</button></div>
-      <div class="err" id="err"></div>
-    </div>
-
-    <div class="card">
-      <div class="row"><h2 style="margin:0">Je zoekopdrachten</h2><span class="muted" id="count"></span></div>
-      <div id="list" style="margin-top:10px"></div>
-    </div>
-
-    <div class="card" id="friends" style="display:none">
-      <h2>Vrienden uitnodigen</h2>
-      <p class="muted">Je vriend krijgt <b>7 dagen gratis</b> in plaats van 2. Wordt hij abonnee, dan krijg jij <b>€4,99 tegoed</b>. Geen maximum.</p>
-      <div class="row" style="margin-top:14px;flex-wrap:nowrap"><input id="reflink" readonly><button id="copyref">Kopieer</button></div>
-      <p class="muted" id="refstats" style="margin-top:10px"></p>
-    </div>
-
-    <div class="card" id="billing">
-      <h2>Abonnement</h2>
-      <div id="billingbody"></div>
+      <section class="editor" id="editor" aria-labelledby="formtitle">
+        <div class="ed-head"><button class="ed-close" id="edclose" aria-label="Sluiten">←</button><h2 id="formtitle">Nieuwe zoekopdracht</h2><button class="danger" id="delbtn" style="display:none">Verwijder</button></div>
+        <div class="ed-body">
+          <div class="step">
+            <h3><i>1</i>Wat zoek je?</h3>
+            <p class="hint">Kies een product om snel te starten, of vul het zelf in.</p>
+            <div class="in">
+              <div class="tpls" id="tpls"></div>
+              <input id="sname" placeholder="Naam, bijv. iPhones om te flippen" maxlength="40">
+            </div>
+          </div>
+          <div class="step">
+            <h3><i>2</i>Zoektermen</h3>
+            <p class="hint">Typ een term en druk op Enter. Max 5, elke term wordt apart gezocht.</p>
+            <div class="in"><div class="chips-in" id="terms-box"><div class="chips" id="terms"></div><input id="term-in" placeholder="bijv. iphone 13" maxlength="60" enterkeyhint="done"></div></div>
+          </div>
+          <div class="step">
+            <h3><i>3</i>Prijs</h3>
+            <div class="in price">
+              <label><small>Minimaal</small><span>€</span><input id="min" type="text" inputmode="numeric" placeholder="0"></label>
+              <label><small>Maximaal</small><span>€</span><input id="max" type="text" inputmode="numeric" placeholder="geen max"></label>
+            </div>
+          </div>
+          <div class="step">
+            <h3><i>4</i>Platforms</h3>
+            <div class="in plats" id="plats"></div>
+          </div>
+          <div class="step">
+            <details class="more" id="exdetails">
+              <summary><i>5</i>Woorden uitsluiten <em id="excount">optioneel</em></summary>
+              <p class="hint" style="margin-top:10px">Advertenties met deze woorden in de titel sla je over.</p>
+              <div class="in">
+                <div class="chips-in ex" id="ex-box"><div class="chips" id="excl"></div><input id="ex-in" placeholder="bijv. defect" maxlength="40" enterkeyhint="done"></div>
+                <div class="sugs" id="ex-sugs"></div>
+              </div>
+            </details>
+          </div>
+        </div>
+        <div class="ed-foot">
+          <div class="preview" id="preview"></div>
+          <div class="ed-btns"><button class="ghost" id="cancel">Annuleren</button><button id="save">Opslaan</button></div>
+          <div class="err" id="err"></div>
+        </div>
+      </section>
     </div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
-var ALL = [['marktplaats','🟠 Marktplaats'],['vinted','🟢 Vinted'],['ebay','🔵 eBay']];
+var ALL = [['marktplaats','Marktplaats','#E9741B'],['vinted','Vinted','#09B1BA'],['ebay','eBay','#E53238']];
 var state = { me: null, searches: [], editId: null, sel: ['marktplaats','vinted'], terms: [], excl: [] };
 // Sjablonen per product: termen, uitsluitwoorden en een realistische prijsrange
 var TPL = [
@@ -149,8 +247,9 @@ function chipRender(id, list, cls){
 }
 function renderChips(){
   chipRender('terms', state.terms); chipRender('excl', state.excl);
-  $('term-in').placeholder = state.terms.length ? (state.terms.length >= 5 ? 'maximaal 5 termen' : 'nog een term toevoegen') : 'typ een term en druk op Enter';
+  $('term-in').placeholder = state.terms.length ? (state.terms.length >= 5 ? 'maximaal 5 termen' : '+ nog een term') : 'bijv. iphone 13';
   $('term-in').disabled = state.terms.length >= 5;
+  $('excount').textContent = state.excl.length ? state.excl.length + ' woord' + (state.excl.length > 1 ? 'en' : '') : 'optioneel';
   $('ex-sugs').innerHTML = EX_SUGS.filter(function(w){ return state.excl.indexOf(w) === -1; }).slice(0, 7).map(function(w){ return '<button type="button" class="sug" data-w="'+w+'">+ '+w+'</button>'; }).join('');
   Array.prototype.forEach.call($('ex-sugs').querySelectorAll('.sug'), function(b){ b.onclick = function(){ addTo(state.excl, b.getAttribute('data-w'), 20); }; });
   renderPreview();
@@ -176,7 +275,7 @@ var LIVE = [];
 fetch('/api/live-feed').then(function(r){ return r.json(); }).then(function(d){ LIVE = d.items || []; renderPreview(); }).catch(function(){});
 function renderPreview(){
   var el = $('preview'); if (!el) return;
-  if (!state.terms.length) { el.innerHTML = 'Tip: gebruik 2 of 3 woorden per term. Zet uitsluitwoorden voor rommel als hoesjes of defecte toestellen.'; return; }
+  if (!state.terms.length) { el.innerHTML = 'Voeg een zoekterm toe om te beginnen.'; return; }
   var min = +$('min').value || 0, max = +$('max').value || 0;
   var hits = LIVE.filter(function(it){
     var t = ' ' + it.title.toLowerCase() + ' ';
@@ -187,7 +286,7 @@ function renderPreview(){
   el.innerHTML = 'Je krijgt meldingen voor <b>' + state.terms.map(esc).join('</b>, <b>') + '</b>' +
     (state.excl.length ? ', zonder <b>' + state.excl.map(esc).join('</b>, <b>') + '</b>' : '') +
     ((min||max) ? ', van €' + (min||0) + (max ? ' tot €' + max : '') : '') + '.' +
-    (LIVE.length && hits.length ? '<br>In de laatste live check stonden er <b>' + hits.length + '</b> die hieraan voldoen.' : '');
+    (LIVE.length && hits.length ? ' Nu online: <b>' + hits.length + '</b> passend.' : '');
 }
 
 function $(id){ return document.getElementById(id); }
@@ -206,7 +305,7 @@ function renderPlats(){
   $('plats').innerHTML = ALL.map(function(p){
     var locked = allowed.indexOf(p[0]) === -1;
     var on = state.sel.indexOf(p[0]) !== -1 && !locked;
-    return '<div class="plat'+(on?' on':'')+(locked?' locked':'')+'" data-p="'+p[0]+'">'+p[1]+(locked?' 🔒':'')+'</div>';
+    return '<div class="plat'+(on?' on':'')+(locked?' locked':'')+'" data-p="'+p[0]+'" role="button" tabindex="0"><i style="background:'+p[2]+'"></i>'+p[1]+'</div>';
   }).join('');
   Array.prototype.forEach.call(document.querySelectorAll('.plat'), function(el){
     el.onclick = function(){
@@ -224,18 +323,19 @@ function renderList(){
   var max = state.me.user.tier === 'pro' ? 25 : 0;
   var active = state.searches.filter(function(s){ return s.active; }).length;
   $('count').textContent = active + ' van ' + max + ' actief';
-  if (!state.searches.length) { $('list').innerHTML = '<p class="muted">Nog geen zoekopdrachten. Maak er hierboven een aan.</p>'; return; }
+  if (!state.searches.length) { $('list').innerHTML = '<p class="empty">Nog geen zoekopdrachten. Maak je eerste aan, het duurt een halve minuut.</p>'; return; }
   $('list').innerHTML = state.searches.map(function(s){
-    var price = (s.min_price || s.max_price) ? ' · €' + (s.min_price || 0) + ' tot ' + (s.max_price ? '€' + s.max_price : 'geen max') : '';
     var terms = (s.terms && s.terms.length ? s.terms : [s.query]);
-    var tags = '<div class="tags">' + terms.map(function(t){ return '<span>'+esc(t)+'</span>'; }).join('') + (s.exclude||[]).map(function(t){ return '<span class="no">zonder '+esc(t)+'</span>'; }).join('') + '</div>';
-    return '<div class="s"><div class="row"><div><b>'+(s.active?'':'⏸ ')+esc(s.name || s.query)+'</b><div class="muted">'+esc(s.platforms.join(', '))+price+'</div>'+tags+'</div>'+
-      '<div class="actions"><button class="ghost" data-a="edit" data-id="'+s.id+'">Wijzig</button>'+
-      '<button class="ghost" data-a="toggle" data-id="'+s.id+'">'+(s.active?'Pauzeer':'Activeer')+'</button>'+
-      '<button class="danger" data-a="del" data-id="'+s.id+'">Verwijder</button></div></div></div>';
+    var price = (s.min_price || s.max_price) ? '€' + (s.min_price || 0) + (s.max_price ? ' tot €' + s.max_price : '+') : 'elke prijs';
+    var sum = terms.join(', ') + ' · ' + price + (s.exclude && s.exclude.length ? ' · ' + s.exclude.length + ' uitgesloten' : '');
+    return '<div class="sitem'+(s.active?'':' paused')+(state.editId===s.id?' sel':'')+'" data-id="'+s.id+'"><div class="txt"><b>'+esc(s.name || terms[0])+'</b><span class="sum">'+esc(sum)+'</span></div>'+
+      '<label class="sw" title="'+(s.active?'Staat aan':'Staat uit')+'"><input type="checkbox" data-t="'+s.id+'"'+(s.active?' checked':'')+' aria-label="Meldingen voor '+esc(s.name || terms[0])+'"><span></span></label></div>';
   }).join('');
-  Array.prototype.forEach.call(document.querySelectorAll('#list button'), function(b){
-    b.onclick = function(){ action(b.getAttribute('data-a'), parseInt(b.getAttribute('data-id'),10)); };
+  Array.prototype.forEach.call(document.querySelectorAll('.sitem'), function(row){
+    row.onclick = function(e){ if (e.target.closest('.sw')) return; action('edit', parseInt(row.getAttribute('data-id'),10)); };
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.sw input'), function(cb){
+    cb.onchange = function(){ action('toggle', parseInt(cb.getAttribute('data-t'),10)); };
   });
 }
 
@@ -288,18 +388,24 @@ function render(){
   var u = state.me.user;
   $('hello').textContent = 'Hoi ' + (u.first_name || u.username || '') + ' 👋';
   $('tierbadge').textContent = state.me.tier.label;
-  $('planinfo').textContent = u.tier !== 'pro' ? 'Start je abonnement om meldingen te krijgen' : (u.paused ? 'Meldingen staan op pauze' : 'Meldingen staan aan');
+  $('planinfo').textContent = u.tier !== 'pro' ? 'Geen abonnement' : (u.paused ? 'Op pauze' : 'Meldingen aan');
+  $('planinfo').className = 'status' + (u.tier !== 'pro' || u.paused ? ' off' : '');
   if (u.tier !== 'pro' && !state.billingFocused) { state.billingFocused = true; setTimeout(function(){ $('billing').scrollIntoView({ behavior: 'smooth' }); }, 300); }
-  $('pause').textContent = u.paused ? '▶️ Hervat' : '⏸ Pauzeer alles';
+  $('pause').textContent = u.paused ? 'Hervat alles' : 'Pauzeer alles';
   renderPlats(); renderList(); renderBilling(); renderFriends();
 }
 
+var isMobile = function(){ return window.matchMedia('(max-width:900px)').matches; };
+function openEditor(){ $('editor').classList.add('open'); if (isMobile()) document.body.classList.add('noscroll'); }
+function closeEditor(){ $('editor').classList.remove('open'); document.body.classList.remove('noscroll'); }
 function resetForm(){
   state.editId = null; state.sel = ['marktplaats','vinted']; state.terms = []; state.excl = [];
   $('sname').value=''; $('term-in').value=''; $('ex-in').value=''; renderChips();
   $('min').value=''; $('max').value=''; $('err').textContent='';
-  $('formtitle').textContent='Nieuwe zoekopdracht'; $('cancel').style.display='none';
-  renderPlats();
+  $('formtitle').textContent='Nieuwe zoekopdracht'; $('delbtn').style.display='none';
+  $('exdetails').open = false;
+  Array.prototype.forEach.call(document.querySelectorAll('.tpl'), function(b){ b.classList.remove('on'); });
+  if (state.me) { renderPlats(); renderList(); }
 }
 
 async function action(a, id){
@@ -309,11 +415,12 @@ async function action(a, id){
       state.editId = id; state.sel = s.platforms.slice();
       $('sname').value = s.name || ''; state.terms = (s.terms && s.terms.length ? s.terms : [s.query]).slice(); state.excl = (s.exclude || []).slice(); renderChips();
       $('min').value = s.min_price || ''; $('max').value = s.max_price || '';
-      $('formtitle').textContent = 'Zoekopdracht wijzigen'; $('cancel').style.display = '';
-      renderPlats(); window.scrollTo({ top: 0, behavior: 'smooth' }); return;
+      $('formtitle').textContent = s.name || 'Zoekopdracht wijzigen'; $('delbtn').style.display = '';
+      $('exdetails').open = state.excl.length > 0;
+      renderPlats(); renderList(); openEditor(); return;
     }
     if (a === 'toggle') await api('PATCH','/api/searches/'+id,{ active: !s.active });
-    if (a === 'del') { if (!confirm('Zoekopdracht verwijderen?')) return; await api('DELETE','/api/searches/'+id); }
+    if (a === 'del') { if (!confirm('Zoekopdracht verwijderen?')) return; await api('DELETE','/api/searches/'+id); resetForm(); closeEditor(); toast('Verwijderd'); }
     await loadSearches();
   } catch(e){ toast(e.message); }
 }
@@ -331,11 +438,14 @@ $('save').onclick = async function(){
     if (state.editId) await api('PATCH','/api/searches/'+state.editId, body);
     else await api('POST','/api/searches', body);
     toast(state.editId ? 'Opgeslagen' : 'Zoekopdracht staat aan, check je Telegram');
-    resetForm(); await loadSearches();
+    resetForm(); closeEditor(); await loadSearches();
   } catch(e){ $('err').textContent = e.message; }
   $('save').disabled = false;
 };
-$('cancel').onclick = resetForm;
+$('cancel').onclick = function(){ resetForm(); closeEditor(); };
+$('edclose').onclick = function(){ closeEditor(); };
+$('addbtn').onclick = function(){ resetForm(); openEditor(); setTimeout(function(){ if (!isMobile()) $('term-in').focus(); }, 50); };
+$('delbtn').onclick = function(){ if (state.editId) action('del', state.editId); };
 $('tpls').innerHTML = TPL.map(function(t, i){ return '<button type="button" class="tpl" data-t="'+i+'">'+t.n+'</button>'; }).join('');
 Array.prototype.forEach.call(document.querySelectorAll('.tpl'), function(b){
   b.onclick = function(){
@@ -343,6 +453,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tpl'), function(b){
     $('sname').value = t.name; state.terms = t.terms.slice(); state.excl = t.excl.slice();
     $('min').value = t.min; $('max').value = t.max;
     state.sel = t.p.filter(function(p){ return !state.me || state.me.tier.platforms.indexOf(p) !== -1; });
+    Array.prototype.forEach.call(document.querySelectorAll('.tpl'), function(x){ x.classList.toggle('on', x === b); });
     if (state.me) renderPlats(); renderChips();
   };
 });
@@ -350,7 +461,7 @@ bindChipInput('term-in', function(){ return state.terms; }, 5);
 bindChipInput('ex-in', function(){ return state.excl; }, 20);
 $('terms-box').onclick = function(){ $('term-in').focus(); };
 $('ex-box').onclick = function(){ $('ex-in').focus(); };
-['min','max'].forEach(function(id){ $(id).addEventListener('input', renderPreview); });
+['min','max'].forEach(function(id){ $(id).addEventListener('input', function(){ $(id).value = $(id).value.replace(/\D/g,''); renderPreview(); }); });
 renderChips();
 $('pause').onclick = async function(){
   try { await api('POST','/api/pause',{ paused: !state.me.user.paused }); state.me.user.paused = !state.me.user.paused; render(); } catch(e){ toast(e.message); }
