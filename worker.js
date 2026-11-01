@@ -23,6 +23,9 @@ function junk(title, query) {
 }
 var running = false;
 
+// Meer zoektermen = meer verzoeken, dus iets ruimer interval: 1 tot 5 termen 30 sec, 6 tot 10 60 sec, 11 tot 15 90 sec
+var INTERVAL_FACTOR_SQL = "(CASE WHEN COALESCE(cardinality(s.terms), 1) > 10 THEN 3 WHEN COALESCE(cardinality(s.terms), 1) > 5 THEN 2 ELSE 1 END)";
+
 function excluded(title, list) {
   if (!list || !list.length) return false;
   var t = ' ' + title.replace(/[^a-z0-9äöüéèàç ]+/g, ' ').replace(/\s+/g, ' ') + ' ';
@@ -43,7 +46,21 @@ function matches(item, s) {
     if (s.min_price && item.price < s.min_price) return false;
     if (s.max_price && item.price > s.max_price) return false;
   }
+  // Extra filters: onbekende waarde laten we door, anders missen we deals
+  if (s.conditions && s.conditions.length && item.condition && s.conditions.indexOf(item.condition) === -1) return false;
+  if (s.delivery && item.delivery && item.delivery !== 'beide' && item.delivery !== s.delivery) return false;
+  if (s.fixed_only && (item.price == null || item.fixed === false)) return false;
   return true;
+}
+
+// Stille uren in Nederlandse tijd, bijvoorbeeld 23 tot 7
+function amsHour() {
+  return parseInt(new Intl.DateTimeFormat('nl-NL', { hour: 'numeric', hourCycle: 'h23', timeZone: 'Europe/Amsterdam' }).format(new Date()), 10);
+}
+function quiet(s) {
+  if (s.quiet_from == null || s.quiet_to == null || s.quiet_from === s.quiet_to) return false;
+  var h = amsHour();
+  return s.quiet_from < s.quiet_to ? (h >= s.quiet_from && h < s.quiet_to) : (h >= s.quiet_from || h < s.quiet_to);
 }
 
 async function checkSearch(s) {
@@ -92,6 +109,7 @@ async function checkSearch(s) {
 
   await db.pool.query('UPDATE alert_searches SET last_checked_at = NOW() WHERE id = $1', [s.id]);
   console.log('[check] "' + (s.name || s.query) + '" ' + counts.join(', ') + ' (gevonden/passend), nieuw: ' + fresh.length);
+  if (quiet(s)) return; // wel bijhouden wat er al was, niet melden
   for (var k = 0; k < fresh.length && k < MAX_PER_RUN; k++) {
     await tg.sendListing(s.chat_id, fresh[k], s.name || s.query);
   }
@@ -103,7 +121,7 @@ async function tick() {
   try {
     var due = await db.pool.query(
       "SELECT s.*, u.tier FROM alert_searches s JOIN alert_users u ON u.chat_id = s.chat_id " +
-      "WHERE s.active = TRUE AND u.paused = FALSE AND u.tier = 'pro' AND (s.last_checked_at IS NULL OR s.last_checked_at < NOW() - '" + TIERS.pro.intervalSec + " seconds'::interval) ORDER BY s.last_checked_at NULLS FIRST LIMIT 50"
+      "WHERE s.active = TRUE AND u.paused = FALSE AND u.tier = 'pro' AND (s.last_checked_at IS NULL OR s.last_checked_at < NOW() - INTERVAL '1 second' * " + TIERS.pro.intervalSec + " * " + INTERVAL_FACTOR_SQL + ") ORDER BY s.last_checked_at NULLS FIRST LIMIT 50"
     );
     for (var i = 0; i < due.rows.length; i++) {
       await checkSearch(due.rows[i]);

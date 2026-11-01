@@ -66,6 +66,16 @@ async function call(s, t) {
   return fetch(url, { signal: AbortSignal.timeout(15000), headers: { 'Authorization': 'Bearer ' + t, 'Accept': 'application/json', 'User-Agent': UA, 'Accept-Language': 'nl-NL,nl;q=0.9' } });
 }
 
+// Staat staat achteraan in item_box.second_line ("44 · Zeer goed"), taal kan per sessie verschillen
+function cond(line) {
+  var v = String(line || '').split('·').pop().trim().toLowerCase();
+  if (!v) return null;
+  if (/^(nieuw|neuf|new|neu|nuevo|nuovo)/.test(v)) return 'nieuw';
+  if (/(zeer goed|très bon|very good|sehr gut|muy bueno|ottime)/.test(v)) return 'zgan';
+  if (/(goed|bon|good|gut|bueno|buone|redelijk|satisfaisant|satisfactory|zufriedenstellend)/.test(v)) return 'gebruikt';
+  return null;
+}
+
 async function search(s) {
   var res = await call(s, await getToken(false));
   if (res.status === 401 || res.status === 403) res = await call(s, await getToken(true));
@@ -81,6 +91,9 @@ async function search(s) {
       url: u.indexOf('http') === 0 ? u : BASE + u,
       image: i.photo && i.photo.url ? i.photo.url : null,
       location: i.item_box && i.item_box.second_line ? i.item_box.second_line : null,
+      condition: cond(i.item_box && i.item_box.second_line),
+      delivery: 'verzenden',
+      fixed: true,
       createdAt: i.photo && i.photo.high_resolution && i.photo.high_resolution.timestamp ? i.photo.high_resolution.timestamp * 1000 : null,
       platform: 'vinted'
     };

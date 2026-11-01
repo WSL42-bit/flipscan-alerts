@@ -18,7 +18,7 @@ Telegram-meldingen van nieuwe advertenties op Marktplaats, Vinted en eBay. Websi
 
 ## Belangrijkste bestanden
 - `index.js`: routes, Stripe webhook, Telegram bot (/start /login /zoekopdrachten /pauze /hervat, admin: /admin /stats /video)
-- `worker.js`: checkt zoekopdrachten, rommelfilter (hoesjes, onderdelen, defect, ruil) en versheidsfilter (plaatsing < 90 min als het platform dat meegeeft)
+- `worker.js`: checkt zoekopdrachten (tot 15 termen, interval 30/60/90 sec naar aantal termen; filters staat, afstand (MP), levering, vaste prijs, stille uren), rommelfilter (hoesjes, onderdelen, defect, ruil) en versheidsfilter (plaatsing < 90 min als het platform dat meegeeft)
 - `scrapers/`: marktplaats (lrp api, geen Topadvertenties/Admarkt), vinted (svc-catalogue + token, geen promoted), ebay (Browse API, alleen EU, geen "for parts")
 - `livefeed.js`: echte deals voor de site via /api/live-feed + mediaan vraagprijs per zoekterm (stats)
 - `growth.js`: dagrapport 09:00 + /stats, dealskanaal (elke 40 min 08:00 tot 23:00), referral en founder logica (referral/founder checkout bewust nog NIET gekoppeld, zie docs/agent-work)

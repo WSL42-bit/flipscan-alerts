@@ -101,6 +101,27 @@ details.more summary em{font-style:normal;font-weight:400;font-size:12.5px;color
 .ed-btns{display:flex;gap:8px;align-items:center}
 .ed-btns #save{flex:1;padding:13px 18px}
 .err{color:#B42318;font-size:13.5px;margin-top:8px;min-height:0}
+.tcount{margin-left:auto;font:500 12px var(--f-body);color:var(--muted);background:var(--paper);border-radius:999px;padding:2px 9px}
+.tcount.full{background:#FDE7E3;color:#A3261A}
+/* Extra filters */
+.opts{display:grid;gap:18px;margin-top:14px}
+.opt>.t{display:flex;align-items:baseline;gap:8px;font-size:13px;font-weight:600;margin-bottom:8px}
+.opt>.t small{font-weight:400;font-size:12px;color:var(--muted)}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.dash .seg button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:8px 14px;font:500 13.5px var(--f-body);transition:all .15s}
+.dash .seg button:hover{border-color:var(--deep)}
+.dash .seg button.on{background:var(--deep);border-color:var(--deep);color:#fff}
+.loc{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dash select{font:inherit;font-size:15px;width:100%;padding:12px 36px 12px 14px;border:1px solid var(--line);border-radius:12px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%230B2A3A' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 14px center;color:var(--ink);appearance:none;-webkit-appearance:none}
+.dash select:focus{outline:none;border-color:var(--deep);box-shadow:0 0 0 3px var(--accent-soft)}
+.dash select:disabled{opacity:.45}
+.tog{display:flex;align-items:center;gap:12px;cursor:pointer}
+.tog>span:first-child{flex:1;font-size:13px;font-weight:600}
+.tog>span:first-child small{display:block;font-weight:400;font-size:12px;color:var(--muted);margin-top:2px}
+.quiet{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-top:10px}
+.quiet[hidden]{display:none}
+.quiet em{font-style:normal;font-size:13px;color:var(--muted)}
+.dash .ed-head .ghost.sm{padding:8px 14px;font-size:13px}
 .err:empty{display:none}
 
 /* Abonnement en vrienden (compact in de zijkolom) */
@@ -175,7 +196,7 @@ details.more summary em{font-style:normal;font-weight:400;font-size:12.5px;color
       </aside>
 
       <section class="editor" id="editor" aria-labelledby="formtitle">
-        <div class="ed-head"><button class="ed-close" id="edclose" aria-label="Sluiten">←</button><h2 id="formtitle">Nieuwe zoekopdracht</h2><button class="danger" id="delbtn" style="display:none">Verwijder</button></div>
+        <div class="ed-head"><button class="ed-close" id="edclose" aria-label="Sluiten">←</button><h2 id="formtitle">Nieuwe zoekopdracht</h2><button class="ghost sm" id="dupbtn" style="display:none" title="Maak een kopie om varianten te testen">Kopie</button><button class="danger" id="delbtn" style="display:none">Verwijder</button></div>
         <div class="ed-body">
           <div class="step">
             <h3><i>1</i>Wat zoek je?</h3>
@@ -186,8 +207,8 @@ details.more summary em{font-style:normal;font-weight:400;font-size:12.5px;color
             </div>
           </div>
           <div class="step">
-            <h3><i>2</i>Zoektermen</h3>
-            <p class="hint">Typ een term en druk op Enter. Max 5, elke term wordt apart gezocht.</p>
+            <h3><i>2</i>Zoektermen <span class="tcount" id="tcount">0/15</span></h3>
+            <p class="hint" id="thint">Typ een term en druk op Enter. Tot 15 termen, elke term wordt apart gezocht.</p>
             <div class="in"><div class="chips-in" id="terms-box"><div class="chips" id="terms"></div><input id="term-in" placeholder="bijv. iphone 13" maxlength="60" enterkeyhint="done"></div></div>
           </div>
           <div class="step">
@@ -211,6 +232,35 @@ details.more summary em{font-style:normal;font-weight:400;font-size:12.5px;color
               </div>
             </details>
           </div>
+          <div class="step">
+            <details class="more" id="fdetails">
+              <summary><i>6</i>Extra filters <em id="fcount">optioneel</em></summary>
+              <div class="in opts">
+                <div class="opt">
+                  <div class="t">Staat <small>niks gekozen is alles</small></div>
+                  <div class="seg" id="conds"></div>
+                </div>
+                <div class="opt">
+                  <div class="t">Afstand <small>alleen Marktplaats</small></div>
+                  <div class="loc">
+                    <input id="postcode" placeholder="Postcode, bijv. 3511AB" maxlength="7" autocomplete="postal-code" autocapitalize="characters">
+                    <select id="dist" aria-label="Afstand"><option value="">Heel Nederland</option><option value="3">&lt; 3 km</option><option value="5">&lt; 5 km</option><option value="10">&lt; 10 km</option><option value="15">&lt; 15 km</option><option value="25">&lt; 25 km</option><option value="50">&lt; 50 km</option><option value="75">&lt; 75 km</option></select>
+                  </div>
+                </div>
+                <div class="opt">
+                  <div class="t">Levering <small>Vinted is altijd verzenden</small></div>
+                  <div class="seg" id="deliv"></div>
+                </div>
+                <label class="opt tog"><span>Alleen vaste prijs<small>Geen bieden, veilingen of "zie omschrijving"</small></span><span class="sw"><input type="checkbox" id="fixed"><span></span></span></label>
+                <div class="opt">
+                  <label class="tog"><span>Stille uren<small>Geen meldingen in deze uren, zoeken loopt gewoon door</small></span><span class="sw"><input type="checkbox" id="quiet"><span></span></span></label>
+                  <div class="quiet" id="quietbox" hidden>
+                    <select id="qfrom" aria-label="Stil vanaf"></select><em>tot</em><select id="qto" aria-label="Stil tot"></select>
+                  </div>
+                </div>
+              </div>
+            </details>
+          </div>
         </div>
         <div class="ed-foot">
           <div class="preview" id="preview"></div>
@@ -225,7 +275,13 @@ details.more summary em{font-style:normal;font-weight:400;font-size:12.5px;color
 
 <script>
 var ALL = [['marktplaats','Marktplaats','#E9741B'],['vinted','Vinted','#09B1BA'],['ebay','eBay','#E53238']];
-var state = { me: null, searches: [], editId: null, sel: ['marktplaats','vinted'], terms: [], excl: [] };
+var state = { me: null, searches: [], editId: null, sel: ['marktplaats','vinted'], terms: [], excl: [], conds: [], deliv: '' };
+var MAXT = 15;
+var CONDS = [['nieuw','Nieuw'],['zgan','Zo goed als nieuw'],['gebruikt','Gebruikt']];
+var DELIVS = [['','Maakt niet uit'],['ophalen','Ophalen'],['verzenden','Verzenden']];
+function hh(h){ return (h < 10 ? '0' : '') + h + ':00'; }
+// Check-interval schaalt mee met het aantal termen (zelfde regel als de server)
+function every(n){ return n > 10 ? 90 : n > 5 ? 60 : 30; }
 // Sjablonen per product: termen, uitsluitwoorden en een realistische prijsrange
 var TPL = [
   { n: 'iPhone', name: 'iPhones', terms: ['iphone 13', 'iphone 13 pro', 'iphone 14'], excl: ['defect', 'kapot', 'icloud', 'hoesje', 'onderdelen', 'scherm'], min: 150, max: 450, p: ['marktplaats','vinted'] },
@@ -247,8 +303,11 @@ function chipRender(id, list, cls){
 }
 function renderChips(){
   chipRender('terms', state.terms); chipRender('excl', state.excl);
-  $('term-in').placeholder = state.terms.length ? (state.terms.length >= 5 ? 'maximaal 5 termen' : '+ nog een term') : 'bijv. iphone 13';
-  $('term-in').disabled = state.terms.length >= 5;
+  var n = state.terms.length;
+  $('term-in').placeholder = n ? (n >= MAXT ? 'maximaal ' + MAXT + ' termen' : '+ nog een term') : 'bijv. iphone 13';
+  $('term-in').disabled = n >= MAXT;
+  $('tcount').textContent = n + '/' + MAXT; $('tcount').classList.toggle('full', n >= MAXT);
+  $('thint').textContent = n > 5 ? 'Met ' + n + ' termen checken we elke ' + every(n) + ' sec (1 tot 5 termen: elke 30 sec).' : 'Typ een term en druk op Enter. Tot ' + MAXT + ' termen, elke term wordt apart gezocht.';
   $('excount').textContent = state.excl.length ? state.excl.length + ' woord' + (state.excl.length > 1 ? 'en' : '') : 'optioneel';
   $('ex-sugs').innerHTML = EX_SUGS.filter(function(w){ return state.excl.indexOf(w) === -1; }).slice(0, 7).map(function(w){ return '<button type="button" class="sug" data-w="'+w+'">+ '+w+'</button>'; }).join('');
   Array.prototype.forEach.call($('ex-sugs').querySelectorAll('.sug'), function(b){ b.onclick = function(){ addTo(state.excl, b.getAttribute('data-w'), 20); }; });
@@ -283,10 +342,42 @@ function renderPreview(){
     var exOk = !state.excl.some(function(w){ return t.indexOf(' ' + w) !== -1; });
     return termOk && exOk && (!min || it.price >= min) && (!max || it.price <= max) && state.sel.indexOf(it.platform) !== -1;
   });
-  el.innerHTML = 'Je krijgt meldingen voor <b>' + state.terms.map(esc).join('</b>, <b>') + '</b>' +
+  var f = filterSummary();
+  var tl = state.terms.length > 3 ? state.terms.slice(0, 3) : state.terms;
+  el.innerHTML = 'Je krijgt meldingen voor <b>' + tl.map(esc).join('</b>, <b>') + '</b>' + (state.terms.length > 3 ? ' en ' + (state.terms.length - 3) + ' meer' : '') +
     (state.excl.length ? ', zonder <b>' + state.excl.map(esc).join('</b>, <b>') + '</b>' : '') +
-    ((min||max) ? ', van €' + (min||0) + (max ? ' tot €' + max : '') : '') + '.' +
-    (LIVE.length && hits.length ? ' Nu online: <b>' + hits.length + '</b> passend.' : '');
+    ((min||max) ? ', van €' + (min||0) + (max ? ' tot €' + max : '') : '') +
+    (f.length ? ', ' + f.map(esc).join(', ') : '') + '.' +
+    (LIVE.length && hits.length && !f.length ? ' Nu online: <b>' + hits.length + '</b> passend.' : '');
+  $('fcount').textContent = f.length ? f.length + ' actief' : 'optioneel';
+}
+// Korte beschrijving van de extra filters, voor voorbeeld en lijst
+function filterSummary(s){
+  var c = s ? (s.conditions || []) : state.conds, d = s ? s.delivery : state.deliv;
+  var pc = s ? s.postcode : ($('postcode').value || '').toUpperCase().replace(/\s+/g,''), km = s ? s.distance_km : +$('dist').value;
+  var fx = s ? s.fixed_only : $('fixed').checked;
+  var qf = s ? s.quiet_from : ($('quiet').checked ? +$('qfrom').value : null), qt = s ? s.quiet_to : +$('qto').value;
+  var out = [];
+  if (c.length) out.push(c.map(function(k){ return CONDS.filter(function(x){ return x[0]===k; })[0][1].toLowerCase(); }).join(' of '));
+  if (pc && km) out.push('binnen ' + km + ' km van ' + pc);
+  if (d) out.push('alleen ' + d);
+  if (fx) out.push('vaste prijs');
+  if (qf != null && qt != null && qf !== qt) out.push('stil ' + hh(qf) + ' tot ' + hh(qt));
+  return out;
+}
+function renderOpts(){
+  $('conds').innerHTML = CONDS.map(function(c){ return '<button type="button" data-c="'+c[0]+'" class="'+(state.conds.indexOf(c[0])!==-1?'on':'')+'">'+c[1]+'</button>'; }).join('');
+  $('deliv').innerHTML = DELIVS.map(function(d){ return '<button type="button" data-d="'+d[0]+'" class="'+(state.deliv===d[0]?'on':'')+'">'+d[1]+'</button>'; }).join('');
+  Array.prototype.forEach.call($('conds').querySelectorAll('button'), function(b){ b.onclick = function(){
+    var k = b.getAttribute('data-c'), i = state.conds.indexOf(k);
+    if (i === -1) state.conds.push(k); else state.conds.splice(i, 1);
+    if (state.conds.length === CONDS.length) state.conds = [];
+    renderOpts();
+  }; });
+  Array.prototype.forEach.call($('deliv').querySelectorAll('button'), function(b){ b.onclick = function(){ state.deliv = b.getAttribute('data-d'); renderOpts(); }; });
+  $('dist').disabled = !/^[1-9][0-9]{3}\s?[A-Za-z]{2}$/.test($('postcode').value.trim());
+  $('quietbox').hidden = !$('quiet').checked;
+  renderPreview();
 }
 
 function $(id){ return document.getElementById(id); }
@@ -327,14 +418,15 @@ function renderList(){
   $('list').innerHTML = state.searches.map(function(s){
     var terms = (s.terms && s.terms.length ? s.terms : [s.query]);
     var price = (s.min_price || s.max_price) ? '€' + (s.min_price || 0) + (s.max_price ? ' tot €' + s.max_price : '+') : 'elke prijs';
-    var sum = terms.join(', ') + ' · ' + price + (s.exclude && s.exclude.length ? ' · ' + s.exclude.length + ' uitgesloten' : '');
+    var fl = filterSummary(s);
+    var sum = (terms.length > 3 ? terms.slice(0, 3).join(', ') + ' +' + (terms.length - 3) : terms.join(', ')) + ' · ' + price + (s.exclude && s.exclude.length ? ' · ' + s.exclude.length + ' uitgesloten' : '') + (fl.length ? ' · ' + fl.length + ' filter' + (fl.length > 1 ? 's' : '') : '');
     return '<div class="sitem'+(s.active?'':' paused')+(state.editId===s.id?' sel':'')+'" data-id="'+s.id+'"><div class="txt"><b>'+esc(s.name || terms[0])+'</b><span class="sum">'+esc(sum)+'</span></div>'+
       '<label class="sw" title="'+(s.active?'Staat aan':'Staat uit')+'"><input type="checkbox" data-t="'+s.id+'"'+(s.active?' checked':'')+' aria-label="Meldingen voor '+esc(s.name || terms[0])+'"><span></span></label></div>';
   }).join('');
   Array.prototype.forEach.call(document.querySelectorAll('.sitem'), function(row){
     row.onclick = function(e){ if (e.target.closest('.sw')) return; action('edit', parseInt(row.getAttribute('data-id'),10)); };
   });
-  Array.prototype.forEach.call(document.querySelectorAll('.sw input'), function(cb){
+  Array.prototype.forEach.call($('list').querySelectorAll('.sw input'), function(cb){
     cb.onchange = function(){ action('toggle', parseInt(cb.getAttribute('data-t'),10)); };
   });
 }
@@ -343,7 +435,7 @@ function renderBilling(){
   var u = state.me.user, P = state.me.plans, html = '';
   if (u.tier === 'pro') {
     var cur = u.plan_interval === 'month' ? 'month' : 'week', other = cur === 'month' ? 'week' : 'month';
-    html += '<p class="muted">Je abonnement: <b style="color:var(--text)">'+P[cur].price+' '+P[cur].label.toLowerCase()+'</b> · 25 zoekopdrachten · check elke 30 sec</p>';
+    html += '<p class="muted">Je abonnement: <b style="color:var(--text)">'+P[cur].price+' '+P[cur].label.toLowerCase()+'</b> · 25 zoekopdrachten · tot 15 termen per zoekopdracht · check elke 30 sec</p>';
     if (cur === 'week') {
       var f2 = state.me.founderLeft > 0, mp = f2 ? '€9,99' : '€14,99', sv = f2 ? '€11,63' : '€6,63';
       html += '<div class="upsell" style="margin-top:16px"><div><b>Bespaar '+sv+' per maand</b><p>Je betaalt nu omgerekend €21,62 per maand. Met het maandabonnement is dat '+mp+(f2?' (founder deal, nog '+state.me.founderLeft+' plekken)':'')+', met precies dezelfde functies. Stripe verrekent wat je al betaald hebt.</p></div><button data-int="month">Wissel naar maand</button></div>';
@@ -403,7 +495,8 @@ function resetForm(){
   $('sname').value=''; $('term-in').value=''; $('ex-in').value=''; renderChips();
   $('min').value=''; $('max').value=''; $('err').textContent='';
   $('formtitle').textContent='Nieuwe zoekopdracht'; $('delbtn').style.display='none';
-  $('exdetails').open = false;
+  $('exdetails').open = false; $('fdetails').open = false; $('dupbtn').style.display='none';
+  state.conds = []; state.deliv = ''; $('postcode').value=''; $('dist').value=''; $('fixed').checked=false; $('quiet').checked=false; $('qfrom').value='23'; $('qto').value='7'; renderOpts();
   Array.prototype.forEach.call(document.querySelectorAll('.tpl'), function(b){ b.classList.remove('on'); });
   if (state.me) { renderPlats(); renderList(); }
 }
@@ -417,7 +510,13 @@ async function action(a, id){
       $('min').value = s.min_price || ''; $('max').value = s.max_price || '';
       $('formtitle').textContent = s.name || 'Zoekopdracht wijzigen'; $('delbtn').style.display = '';
       $('exdetails').open = state.excl.length > 0;
-      renderPlats(); renderList(); openEditor(); return;
+      state.conds = (s.conditions || []).slice(); state.deliv = s.delivery || '';
+      $('postcode').value = s.postcode || ''; $('dist').value = s.distance_km ? String(s.distance_km) : '';
+      $('fixed').checked = !!s.fixed_only;
+      $('quiet').checked = s.quiet_from != null && s.quiet_to != null;
+      $('qfrom').value = String(s.quiet_from != null ? s.quiet_from : 23); $('qto').value = String(s.quiet_to != null ? s.quiet_to : 7);
+      $('fdetails').open = filterSummary(s).length > 0; $('dupbtn').style.display = '';
+      renderOpts(); renderPlats(); renderList(); openEditor(); return;
     }
     if (a === 'toggle') await api('PATCH','/api/searches/'+id,{ active: !s.active });
     if (a === 'del') { if (!confirm('Zoekopdracht verwijderen?')) return; await api('DELETE','/api/searches/'+id); resetForm(); closeEditor(); toast('Verwijderd'); }
@@ -429,10 +528,12 @@ async function loadSearches(){ state.searches = await api('GET','/api/searches')
 
 $('save').onclick = async function(){
   $('err').textContent = '';
-  if ($('term-in').value.trim()) { addTo(state.terms, $('term-in').value, 5); $('term-in').value=''; }
+  if ($('term-in').value.trim()) { addTo(state.terms, $('term-in').value, MAXT); $('term-in').value=''; }
   if ($('ex-in').value.trim()) { addTo(state.excl, $('ex-in').value, 20); $('ex-in').value=''; }
   if (!state.terms.length) { $('err').textContent = 'Voeg minimaal één zoekterm toe'; return; }
-  var body = { name: $('sname').value, terms: state.terms, exclude: state.excl, platforms: state.sel, min_price: $('min').value, max_price: $('max').value };
+  var pc = $('postcode').value.trim();
+  if (pc && !/^[1-9][0-9]{3}\s?[A-Za-z]{2}$/.test(pc)) { $('fdetails').open = true; $('err').textContent = 'Vul een geldige postcode in, bijvoorbeeld 3511AB'; return; }
+  var body = formBody();
   $('save').disabled = true;
   try {
     if (state.editId) await api('PATCH','/api/searches/'+state.editId, body);
@@ -442,6 +543,23 @@ $('save').onclick = async function(){
   } catch(e){ $('err').textContent = e.message; }
   $('save').disabled = false;
 };
+function formBody(){
+  return { name: $('sname').value, terms: state.terms, exclude: state.excl, platforms: state.sel, min_price: $('min').value, max_price: $('max').value,
+    conditions: state.conds, delivery: state.deliv || null, postcode: $('postcode').value.trim(), distance_km: $('dist').value ? +$('dist').value : null,
+    fixed_only: $('fixed').checked, quiet_from: $('quiet').checked ? +$('qfrom').value : null, quiet_to: $('quiet').checked ? +$('qto').value : null };
+}
+// Kopie: zelfde instellingen als nieuwe zoekopdracht, handig om een variant te testen
+$('dupbtn').onclick = async function(){
+  var body = formBody(); body.name = ((body.name || state.terms[0] || 'Zoekopdracht').slice(0, 33) + ' kopie');
+  $('dupbtn').disabled = true;
+  try { var r = await api('POST','/api/searches', body); await loadSearches(); toast('Kopie gemaakt'); action('edit', r.id); }
+  catch(e){ toast(e.message); }
+  $('dupbtn').disabled = false;
+};
+$('qfrom').innerHTML = $('qto').innerHTML = Array.from({length:24}, function(_, h){ return '<option value="'+h+'">'+hh(h)+'</option>'; }).join('');
+$('qfrom').value = '23'; $('qto').value = '7';
+['postcode','dist','fixed','quiet','qfrom','qto'].forEach(function(id){ $(id).addEventListener(id === 'postcode' ? 'input' : 'change', renderOpts); });
+$('postcode').addEventListener('blur', function(){ var v = $('postcode').value.toUpperCase().replace(/\s+/g,''); $('postcode').value = v; if (v && !$('dist').value && !$('dist').disabled) { $('dist').value = '25'; renderOpts(); } });
 $('cancel').onclick = function(){ resetForm(); closeEditor(); };
 $('edclose').onclick = function(){ closeEditor(); };
 $('addbtn').onclick = function(){ resetForm(); openEditor(); setTimeout(function(){ if (!isMobile()) $('term-in').focus(); }, 50); };
@@ -457,12 +575,12 @@ Array.prototype.forEach.call(document.querySelectorAll('.tpl'), function(b){
     if (state.me) renderPlats(); renderChips();
   };
 });
-bindChipInput('term-in', function(){ return state.terms; }, 5);
+bindChipInput('term-in', function(){ return state.terms; }, MAXT);
 bindChipInput('ex-in', function(){ return state.excl; }, 20);
 $('terms-box').onclick = function(){ $('term-in').focus(); };
 $('ex-box').onclick = function(){ $('ex-in').focus(); };
 ['min','max'].forEach(function(id){ $(id).addEventListener('input', function(){ $(id).value = $(id).value.replace(/\D/g,''); renderPreview(); }); });
-renderChips();
+renderOpts(); renderChips();
 $('pause').onclick = async function(){
   try { await api('POST','/api/pause',{ paused: !state.me.user.paused }); state.me.user.paused = !state.me.user.paused; render(); } catch(e){ toast(e.message); }
 };

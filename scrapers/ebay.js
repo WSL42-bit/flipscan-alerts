@@ -18,11 +18,25 @@ async function getToken() {
   return token;
 }
 
+// eBay conditie ID's, 7000 (for parts) nooit
+var COND_IDS = {
+  nieuw: ['1000', '1500'],
+  zgan: ['1750', '2000', '2010', '2020', '2030', '2500', '2750'],
+  gebruikt: ['3000', '4000', '5000', '6000']
+};
+function condOf(id) {
+  for (var k in COND_IDS) if (COND_IDS[k].indexOf(String(id)) !== -1) return k;
+  return null;
+}
+
 async function search(s) {
   if (!process.env.EBAY_CLIENT_ID || !process.env.EBAY_CLIENT_SECRET) throw new Error('eBay is not configured');
   var t = await getToken();
   // Alleen Europees aanbod en geen 'for parts or not working' (conditie 7000)
-  var filter = 'buyingOptions:{FIXED_PRICE|AUCTION|BEST_OFFER},itemLocationRegion:EUROPEAN_UNION,conditionIds:{1000|1500|1750|2000|2010|2020|2030|2500|2750|3000|4000|5000|6000}';
+  var ids = [];
+  var want = s.conditions && s.conditions.length ? s.conditions : ['nieuw', 'zgan', 'gebruikt'];
+  want.forEach(function (c) { ids = ids.concat(COND_IDS[c] || []); });
+  var filter = 'buyingOptions:{' + (s.fixed_only ? 'FIXED_PRICE' : 'FIXED_PRICE|AUCTION|BEST_OFFER') + '},itemLocationRegion:EUROPEAN_UNION,conditionIds:{' + ids.join('|') + '}';
   if (s.min_price || s.max_price) {
     filter += ',price:[' + (s.min_price || 0) + '..' + (s.max_price || '') + '],priceCurrency:EUR';
   }
@@ -43,6 +57,8 @@ async function search(s) {
       url: i.itemWebUrl,
       image: i.image ? i.image.imageUrl : null,
       location: i.itemLocation && i.itemLocation.country ? i.itemLocation.country : null,
+      condition: condOf(i.conditionId),
+      fixed: (i.buyingOptions || []).indexOf('FIXED_PRICE') !== -1,
       createdAt: i.itemCreationDate ? Date.parse(i.itemCreationDate) : null,
       platform: 'ebay'
     };

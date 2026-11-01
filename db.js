@@ -43,6 +43,13 @@ async function init() {
     'ALTER TABLE alert_searches ADD COLUMN IF NOT EXISTS name TEXT;' +
     'ALTER TABLE alert_searches ADD COLUMN IF NOT EXISTS terms TEXT[];' +
     'ALTER TABLE alert_searches ADD COLUMN IF NOT EXISTS exclude TEXT[];' +
+    'ALTER TABLE alert_searches ADD COLUMN IF NOT EXISTS postcode TEXT;' +
+    'ALTER TABLE alert_searches ADD COLUMN IF NOT EXISTS distance_km INTEGER;' +
+    'ALTER TABLE alert_searches ADD COLUMN IF NOT EXISTS conditions TEXT[];' +
+    'ALTER TABLE alert_searches ADD COLUMN IF NOT EXISTS delivery TEXT;' +
+    'ALTER TABLE alert_searches ADD COLUMN IF NOT EXISTS fixed_only BOOLEAN NOT NULL DEFAULT FALSE;' +
+    'ALTER TABLE alert_searches ADD COLUMN IF NOT EXISTS quiet_from SMALLINT;' +
+    'ALTER TABLE alert_searches ADD COLUMN IF NOT EXISTS quiet_to SMALLINT;' +
     'CREATE TABLE IF NOT EXISTS alert_platform_state (' +
     ' search_id INTEGER NOT NULL REFERENCES alert_searches(id) ON DELETE CASCADE,' +
     ' platform TEXT NOT NULL, PRIMARY KEY(search_id, platform));' +

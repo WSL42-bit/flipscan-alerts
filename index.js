@@ -98,7 +98,7 @@ app.get('/api/me', auth.requireUser, async function (req, res) {
 });
 
 app.get('/api/searches', auth.requireUser, async function (req, res) {
-  var r = await db.pool.query('SELECT id, name, query, terms, exclude, platforms, min_price, max_price, active, last_checked_at FROM alert_searches WHERE chat_id=$1 ORDER BY created_at', [req.chatId]);
+  var r = await db.pool.query('SELECT id, name, query, terms, exclude, platforms, min_price, max_price, postcode, distance_km, conditions, delivery, fixed_only, quiet_from, quiet_to, active, last_checked_at FROM alert_searches WHERE chat_id=$1 ORDER BY created_at', [req.chatId]);
   res.json(r.rows);
 });
 
@@ -115,8 +115,8 @@ function cleanList(v, maxItems, maxLen, lower) {
 }
 
 function cleanSearch(b, tier) {
-  // Meerdere zoektermen per zoekopdracht (max 5). 'query' blijft de eerste term voor oude code.
-  var terms = cleanList(b.terms != null ? b.terms : [b.query], 5, 60, false);
+  // Meerdere zoektermen per zoekopdracht (max 15). 'query' blijft de eerste term voor oude code.
+  var terms = cleanList(b.terms != null ? b.terms : [b.query], 15, 60, false);
   if (!terms.length) return { error: 'Vul minimaal één zoekterm in' };
   var q = terms[0];
   var name = String(b.name || '').replace(/\s+/g, ' ').trim().slice(0, 40) || null;
@@ -128,8 +128,34 @@ function cleanSearch(b, tier) {
   var min = b.min_price ? Math.max(0, parseInt(b.min_price, 10)) : null;
   var max = b.max_price ? Math.max(0, parseInt(b.max_price, 10)) : null;
   if (min != null && max != null && min > max) return { error: 'Minimumprijs mag niet hoger zijn dan maximumprijs' };
-  return { query: q, name: name, terms: terms, exclude: exclude, platforms: platforms, min: isNaN(min) ? null : min, max: isNaN(max) ? null : max };
+  // Locatie (Marktplaats): Nederlandse postcode + straal
+  var postcode = String(b.postcode || '').toUpperCase().replace(/\s+/g, '');
+  var dist = parseInt(b.distance_km, 10);
+  if (postcode && !/^[1-9][0-9]{3}[A-Z]{2}$/.test(postcode)) return { error: 'Vul een geldige postcode in, bijvoorbeeld 3511AB' };
+  if (!postcode || DISTANCES.indexOf(dist) === -1) { postcode = null; dist = null; }
+  var conditions = (Array.isArray(b.conditions) ? b.conditions : []).filter(function (x, i, a) { return CONDITIONS.indexOf(x) !== -1 && a.indexOf(x) === i; });
+  if (conditions.length === CONDITIONS.length) conditions = [];
+  var delivery = DELIVERY.indexOf(b.delivery) !== -1 ? b.delivery : null;
+  var qf = parseInt(b.quiet_from, 10), qt = parseInt(b.quiet_to, 10);
+  if (isNaN(qf) || isNaN(qt) || qf < 0 || qf > 23 || qt < 0 || qt > 23 || qf === qt) { qf = null; qt = null; }
+  return {
+    query: q, name: name, terms: terms, exclude: exclude, platforms: platforms, min: isNaN(min) ? null : min, max: isNaN(max) ? null : max,
+    postcode: postcode, dist: dist, conditions: conditions, delivery: delivery, fixed: b.fixed_only === true, qf: qf, qt: qt
+  };
 }
+var DISTANCES = [3, 5, 10, 15, 25, 50, 75];
+var COND_LABEL = { nieuw: 'nieuw', zgan: 'zo goed als nieuw', gebruikt: 'gebruikt' };
+function extraText(s) {
+  var f = [];
+  if (s.conditions && s.conditions.length) f.push(s.conditions.map(function (c) { return COND_LABEL[c] || c; }).join(' of '));
+  if (s.postcode && s.distance_km) f.push('< ' + s.distance_km + ' km van ' + s.postcode);
+  if (s.delivery) f.push('alleen ' + s.delivery);
+  if (s.fixed_only) f.push('vaste prijs');
+  if (s.quiet_from != null && s.quiet_to != null) f.push('stil ' + s.quiet_from + ':00 tot ' + s.quiet_to + ':00');
+  return f.length ? '\n    ' + f.join(' · ') : '';
+}
+var CONDITIONS = ['nieuw', 'zgan', 'gebruikt'];
+var DELIVERY = ['ophalen', 'verzenden'];
 
 app.post('/api/searches', auth.requireUser, async function (req, res) {
   try {
@@ -140,8 +166,8 @@ app.post('/api/searches', auth.requireUser, async function (req, res) {
     if (u.tier !== 'pro') return res.status(403).json({ error: 'Start eerst je abonnement (' + config.TRIAL_DAYS + ' dagen gratis) om meldingen te krijgen.' });
     if (count >= TIERS.pro.maxSearches) return res.status(403).json({ error: 'Maximum van ' + TIERS.pro.maxSearches + ' zoekopdrachten bereikt.' });
     var r = await db.pool.query(
-      'INSERT INTO alert_searches (chat_id, query, name, terms, exclude, platforms, min_price, max_price) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *',
-      [req.chatId, c.query, c.name, c.terms, c.exclude, c.platforms, c.min, c.max]
+      'INSERT INTO alert_searches (chat_id, query, name, terms, exclude, platforms, min_price, max_price, postcode, distance_km, conditions, delivery, fixed_only, quiet_from, quiet_to) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *',
+      [req.chatId, c.query, c.name, c.terms, c.exclude, c.platforms, c.min, c.max, c.postcode, c.dist, c.conditions, c.delivery, c.fixed, c.qf, c.qt]
     );
     res.json(r.rows[0]);
   } catch (e) {
@@ -167,8 +193,8 @@ app.patch('/api/searches/:id', auth.requireUser, async function (req, res) {
     var c = cleanSearch(req.body, u.tier);
     if (c.error) return res.status(400).json({ error: c.error });
     await db.pool.query(
-      'UPDATE alert_searches SET query=$1, name=$2, terms=$3, exclude=$4, platforms=$5, min_price=$6, max_price=$7, seeded=FALSE WHERE id=$8 AND chat_id=$9 RETURNING id',
-      [c.query, c.name, c.terms, c.exclude, c.platforms, c.min, c.max, req.params.id, req.chatId]
+      'UPDATE alert_searches SET query=$1, name=$2, terms=$3, exclude=$4, platforms=$5, min_price=$6, max_price=$7, postcode=$8, distance_km=$9, conditions=$10, delivery=$11, fixed_only=$12, quiet_from=$13, quiet_to=$14, seeded=FALSE WHERE id=$15 AND chat_id=$16 RETURNING id',
+      [c.query, c.name, c.terms, c.exclude, c.platforms, c.min, c.max, c.postcode, c.dist, c.conditions, c.delivery, c.fixed, c.qf, c.qt, req.params.id, req.chatId]
     ).then(async function (r) {
       // Alleen de geschiedenis van je eigen zoekopdracht wissen
       if (r.rowCount) await db.pool.query('DELETE FROM alert_seen WHERE search_id=$1', [req.params.id]);
@@ -288,13 +314,13 @@ app.post('/tg/webhook', async function (req, res) {
       return tg.sendMessage(chatId, await growth.statsText() + '\n\n<i>Je krijgt dit rapport elke ochtend om 09:00.</i>');
     }
     if (cmd === '/zoekopdrachten') {
-      var r = await db.pool.query('SELECT name, query, terms, exclude, platforms, min_price, max_price, active FROM alert_searches WHERE chat_id=$1 ORDER BY created_at', [chatId]);
+      var r = await db.pool.query('SELECT name, query, terms, exclude, platforms, min_price, max_price, postcode, distance_km, conditions, delivery, fixed_only, quiet_from, quiet_to, active FROM alert_searches WHERE chat_id=$1 ORDER BY created_at', [chatId]);
       if (!r.rows.length) return tg.sendMessage(chatId, 'Je hebt nog geen zoekopdrachten.', loginButton(chatId));
       var lines = r.rows.map(function (s) {
         var price = s.min_price || s.max_price ? ' (€' + (s.min_price || 0) + ' tot €' + (s.max_price || '∞') + ')' : '';
         var terms = (s.terms && s.terms.length ? s.terms : [s.query]).join(', ');
         return (s.active ? '✅ ' : '⏸ ') + '<b>' + tg.esc(s.name || s.query) + '</b>' + price + '\n    ' + tg.esc(terms) +
-          (s.exclude && s.exclude.length ? '\n    zonder: ' + tg.esc(s.exclude.join(', ')) : '') + '\n    ' + s.platforms.join(', ');
+          (s.exclude && s.exclude.length ? '\n    zonder: ' + tg.esc(s.exclude.join(', ')) : '') + '\n    ' + s.platforms.join(', ') + extraText(s);
       });
       return tg.sendMessage(chatId, lines.join('\n'), loginButton(chatId));
     }

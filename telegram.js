@@ -27,7 +27,7 @@ async function sendListing(chatId, item, query) {
   var price = item.price != null ? '€' + item.price.toFixed(2).replace('.', ',') : (item.priceLabel || 'Prijs onbekend');
   var caption = '<b>' + esc(item.title) + '</b>\n' +
     '💶 ' + price + '\n' +
-    PLATFORM_LABEL[item.platform] + (item.location ? ' · ' + esc(item.location) : '') + '\n' +
+    PLATFORM_LABEL[item.platform] + (item.location ? ' · ' + esc(item.location) : '') + (item.distanceKm != null ? ' (' + item.distanceKm + ' km)' : '') + '\n' +
     '🔎 ' + esc(query);
   var markup = { inline_keyboard: [[{ text: 'Bekijk advertentie', url: item.url }]] };
   if (item.image) {
