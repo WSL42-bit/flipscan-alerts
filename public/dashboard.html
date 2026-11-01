@@ -22,7 +22,28 @@
 .dash button:disabled{opacity:.5;cursor:default}
 .dash input{font:inherit;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:var(--r-sm);padding:12px 14px;width:100%}
 .dash input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-label.small{font-size:13px;color:var(--muted);display:block;margin-bottom:6px;font-weight:500}
+label.small{font-size:13px;color:var(--ink-2);display:block;margin-bottom:6px;font-weight:600}
+label .opt{font-weight:400;color:var(--muted)}
+.tpl-wrap{margin:4px 0 18px}
+.tpls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.dash .tpl{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:7px 14px;font:500 13.5px var(--f-body);cursor:pointer;color:var(--ink)}
+.dash .tpl:hover{border-color:var(--deep);background:var(--accent-soft)}
+.chips-in{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--line);background:#fff;border-radius:var(--r-sm);padding:7px 8px;cursor:text}
+.chips-in:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.chips-in input{border:0!important;box-shadow:none!important;padding:6px 4px!important;flex:1;min-width:150px;width:auto!important}
+.chips{display:contents}
+.chip-x{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--deep);border-radius:999px;padding:5px 6px 5px 12px;font-size:13.5px;font-weight:600}
+.dash .chip-x button{all:unset;cursor:pointer;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:14px;line-height:1}
+.dash .chip-x button:hover{background:rgba(0,0,0,.08)}
+.ex .chip-x{background:#FDE7E3;color:#A3261A}
+.sugs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.dash .sug{all:unset;cursor:pointer;font-size:12.5px;color:var(--muted);border:1px dashed var(--line);border-radius:999px;padding:4px 10px}
+.dash .sug:hover{color:#A3261A;border-color:#E9A79D}
+.preview{margin-top:16px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r-sm);padding:14px 16px;font-size:13.5px;color:var(--ink-2)}
+.preview b{color:var(--deep)}
+.s .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.s .tags span{font-size:12px;background:var(--accent-soft);color:var(--deep);border-radius:999px;padding:2px 9px}
+.s .tags span.no{background:#FDE7E3;color:#A3261A}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .plats{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
 .plat{border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:14px;font-weight:500;cursor:pointer;user-select:none;background:#fff}
@@ -62,13 +83,24 @@ label.small{font-size:13px;color:var(--muted);display:block;margin-bottom:6px;fo
 
     <div class="card">
       <h2 id="formtitle">Nieuwe zoekopdracht</h2>
-      <label class="small">Zoekterm</label>
-      <input id="q" placeholder="bijv. iphone 13 pro" maxlength="80">
+      <div class="tpl-wrap"><span class="small muted">Snel starten met een sjabloon:</span><div class="tpls" id="tpls"></div></div>
+
+      <label class="small" for="sname">Naam <span class="opt">(optioneel)</span></label>
+      <input id="sname" placeholder="bijv. iPhones om te flippen" maxlength="40">
+
+      <label class="small" style="margin-top:16px">Zoektermen <span class="opt">max 5, elke term wordt apart gezocht</span></label>
+      <div class="chips-in" id="terms-box"><div class="chips" id="terms"></div><input id="term-in" placeholder="typ een term en druk op Enter" maxlength="60"></div>
+
+      <label class="small" style="margin-top:16px">Uitsluiten <span class="opt">advertenties met deze woorden sla je over</span></label>
+      <div class="chips-in ex" id="ex-box"><div class="chips" id="excl"></div><input id="ex-in" placeholder="bijv. defect, icloud, mini" maxlength="40"></div>
+      <div class="sugs" id="ex-sugs"></div>
+
       <div class="plats" id="plats"></div>
       <div class="grid2">
         <div><label class="small">Min prijs (€)</label><input id="min" type="number" min="0" placeholder="0"></div>
         <div><label class="small">Max prijs (€)</label><input id="max" type="number" min="0" placeholder="geen max"></div>
       </div>
+      <div class="preview" id="preview"></div>
       <div class="row" style="margin-top:16px"><button id="save">Opslaan</button><button class="ghost" id="cancel" style="display:none">Annuleren</button></div>
       <div class="err" id="err"></div>
     </div>
@@ -95,7 +127,68 @@ label.small{font-size:13px;color:var(--muted);display:block;margin-bottom:6px;fo
 
 <script>
 var ALL = [['marktplaats','🟠 Marktplaats'],['vinted','🟢 Vinted'],['ebay','🔵 eBay']];
-var state = { me: null, searches: [], editId: null, sel: ['marktplaats','vinted'] };
+var state = { me: null, searches: [], editId: null, sel: ['marktplaats','vinted'], terms: [], excl: [] };
+// Sjablonen per product: termen, uitsluitwoorden en een realistische prijsrange
+var TPL = [
+  { n: 'iPhone', name: 'iPhones', terms: ['iphone 13', 'iphone 13 pro', 'iphone 14'], excl: ['defect', 'kapot', 'icloud', 'hoesje', 'onderdelen', 'scherm'], min: 150, max: 450, p: ['marktplaats','vinted'] },
+  { n: 'Sneakers', name: 'Sneakers', terms: ['nike dunk', 'jordan 1', 'new balance 550'], excl: ['fake', 'replica', 'kids', 'kinder', 'veters'], min: 30, max: 120, p: ['vinted','marktplaats'] },
+  { n: 'PlayStation', name: 'PS5', terms: ['playstation 5', 'ps5'], excl: ['game', 'spel', 'controller', 'defect', 'ps4'], min: 200, max: 380, p: ['marktplaats','ebay'] },
+  { n: 'Nintendo', name: 'Switch', terms: ['nintendo switch oled', 'nintendo switch'], excl: ['game', 'spel', 'joycon', 'defect', 'hoes'], min: 120, max: 260, p: ['marktplaats','vinted'] },
+  { n: 'MacBook', name: 'MacBooks', terms: ['macbook air m1', 'macbook air m2', 'macbook pro m1'], excl: ['defect', 'icloud', 'sleeve', 'oplader', 'onderdelen'], min: 350, max: 800, p: ['marktplaats','ebay'] },
+  { n: 'Lego', name: 'Lego', terms: ['lego star wars', 'lego technic'], excl: ['minifig', 'poppetje', 'incompleet', 'zonder doos'], min: 20, max: 200, p: ['marktplaats','vinted','ebay'] },
+  { n: 'Dyson', name: 'Dyson', terms: ['dyson v11', 'dyson v15', 'dyson airwrap'], excl: ['defect', 'accu', 'onderdelen', 'opzetstuk'], min: 80, max: 300, p: ['marktplaats'] },
+  { n: 'Fiets', name: 'Fietsen', terms: ['gazelle', 'vanmoof', 'cortina'], excl: ['kinderfiets', 'onderdelen', 'gezocht', 'slot'], min: 100, max: 600, p: ['marktplaats'] }
+];
+var EX_SUGS = ['defect', 'kapot', 'onderdelen', 'hoesje', 'icloud', 'replica', 'fake', 'gezocht', 'ruilen', 'kids'];
+
+function chipRender(id, list, cls){
+  $(id).innerHTML = list.map(function(t, i){ return '<span class="chip-x">'+esc(t)+'<button type="button" aria-label="Verwijder '+esc(t)+'" data-i="'+i+'">×</button></span>'; }).join('');
+  Array.prototype.forEach.call($(id).querySelectorAll('button'), function(b){
+    b.onclick = function(){ list.splice(+b.getAttribute('data-i'), 1); renderChips(); };
+  });
+}
+function renderChips(){
+  chipRender('terms', state.terms); chipRender('excl', state.excl);
+  $('term-in').placeholder = state.terms.length ? (state.terms.length >= 5 ? 'maximaal 5 termen' : 'nog een term toevoegen') : 'typ een term en druk op Enter';
+  $('term-in').disabled = state.terms.length >= 5;
+  $('ex-sugs').innerHTML = EX_SUGS.filter(function(w){ return state.excl.indexOf(w) === -1; }).slice(0, 7).map(function(w){ return '<button type="button" class="sug" data-w="'+w+'">+ '+w+'</button>'; }).join('');
+  Array.prototype.forEach.call($('ex-sugs').querySelectorAll('.sug'), function(b){ b.onclick = function(){ addTo(state.excl, b.getAttribute('data-w'), 20); }; });
+  renderPreview();
+}
+function addTo(list, val, max){
+  String(val).split(',').forEach(function(v){
+    v = v.replace(/\s+/g,' ').trim();
+    if (v.length >= 2 && list.length < max && list.map(function(x){return x.toLowerCase();}).indexOf(v.toLowerCase()) === -1) list.push(list === state.excl ? v.toLowerCase() : v);
+  });
+  renderChips();
+}
+function bindChipInput(inputId, list, max){
+  var inp = $(inputId);
+  inp.addEventListener('keydown', function(e){
+    if ((e.key === 'Enter' || e.key === ',') && inp.value.trim()) { e.preventDefault(); addTo(list(), inp.value, max); inp.value=''; }
+    else if (e.key === 'Backspace' && !inp.value && list().length) { list().pop(); renderChips(); }
+  });
+  inp.addEventListener('blur', function(){ if (inp.value.trim()) { addTo(list(), inp.value, max); inp.value=''; } });
+}
+
+// Live voorbeeld: hoeveel advertenties uit de laatste check passen bij deze instellingen
+var LIVE = [];
+fetch('/api/live-feed').then(function(r){ return r.json(); }).then(function(d){ LIVE = d.items || []; renderPreview(); }).catch(function(){});
+function renderPreview(){
+  var el = $('preview'); if (!el) return;
+  if (!state.terms.length) { el.innerHTML = 'Tip: gebruik 2 of 3 woorden per term. Zet uitsluitwoorden voor rommel als hoesjes of defecte toestellen.'; return; }
+  var min = +$('min').value || 0, max = +$('max').value || 0;
+  var hits = LIVE.filter(function(it){
+    var t = ' ' + it.title.toLowerCase() + ' ';
+    var termOk = state.terms.some(function(term){ return term.toLowerCase().split(/\s+/).every(function(w){ return t.indexOf(w) !== -1; }); });
+    var exOk = !state.excl.some(function(w){ return t.indexOf(' ' + w) !== -1; });
+    return termOk && exOk && (!min || it.price >= min) && (!max || it.price <= max) && state.sel.indexOf(it.platform) !== -1;
+  });
+  el.innerHTML = 'Je krijgt meldingen voor <b>' + state.terms.map(esc).join('</b>, <b>') + '</b>' +
+    (state.excl.length ? ', zonder <b>' + state.excl.map(esc).join('</b>, <b>') + '</b>' : '') +
+    ((min||max) ? ', van €' + (min||0) + (max ? ' tot €' + max : '') : '') + '.' +
+    (LIVE.length && hits.length ? '<br>In de laatste live check stonden er <b>' + hits.length + '</b> die hieraan voldoen.' : '');
+}
 
 function $(id){ return document.getElementById(id); }
 function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
@@ -124,6 +217,7 @@ function renderPlats(){
       renderPlats();
     };
   });
+  if (typeof renderPreview === 'function') renderPreview();
 }
 
 function renderList(){
@@ -133,7 +227,9 @@ function renderList(){
   if (!state.searches.length) { $('list').innerHTML = '<p class="muted">Nog geen zoekopdrachten. Maak er hierboven een aan.</p>'; return; }
   $('list').innerHTML = state.searches.map(function(s){
     var price = (s.min_price || s.max_price) ? ' · €' + (s.min_price || 0) + ' tot ' + (s.max_price ? '€' + s.max_price : 'geen max') : '';
-    return '<div class="s"><div class="row"><div><b>'+(s.active?'':'⏸ ')+esc(s.query)+'</b><div class="muted">'+esc(s.platforms.join(', '))+price+'</div></div>'+
+    var terms = (s.terms && s.terms.length ? s.terms : [s.query]);
+    var tags = '<div class="tags">' + terms.map(function(t){ return '<span>'+esc(t)+'</span>'; }).join('') + (s.exclude||[]).map(function(t){ return '<span class="no">zonder '+esc(t)+'</span>'; }).join('') + '</div>';
+    return '<div class="s"><div class="row"><div><b>'+(s.active?'':'⏸ ')+esc(s.name || s.query)+'</b><div class="muted">'+esc(s.platforms.join(', '))+price+'</div>'+tags+'</div>'+
       '<div class="actions"><button class="ghost" data-a="edit" data-id="'+s.id+'">Wijzig</button>'+
       '<button class="ghost" data-a="toggle" data-id="'+s.id+'">'+(s.active?'Pauzeer':'Activeer')+'</button>'+
       '<button class="danger" data-a="del" data-id="'+s.id+'">Verwijder</button></div></div></div>';
@@ -199,8 +295,9 @@ function render(){
 }
 
 function resetForm(){
-  state.editId = null; state.sel = ['marktplaats','vinted'];
-  $('q').value=''; $('min').value=''; $('max').value=''; $('err').textContent='';
+  state.editId = null; state.sel = ['marktplaats','vinted']; state.terms = []; state.excl = [];
+  $('sname').value=''; $('term-in').value=''; $('ex-in').value=''; renderChips();
+  $('min').value=''; $('max').value=''; $('err').textContent='';
   $('formtitle').textContent='Nieuwe zoekopdracht'; $('cancel').style.display='none';
   renderPlats();
 }
@@ -210,7 +307,8 @@ async function action(a, id){
   try {
     if (a === 'edit') {
       state.editId = id; state.sel = s.platforms.slice();
-      $('q').value = s.query; $('min').value = s.min_price || ''; $('max').value = s.max_price || '';
+      $('sname').value = s.name || ''; state.terms = (s.terms && s.terms.length ? s.terms : [s.query]).slice(); state.excl = (s.exclude || []).slice(); renderChips();
+      $('min').value = s.min_price || ''; $('max').value = s.max_price || '';
       $('formtitle').textContent = 'Zoekopdracht wijzigen'; $('cancel').style.display = '';
       renderPlats(); window.scrollTo({ top: 0, behavior: 'smooth' }); return;
     }
@@ -224,7 +322,10 @@ async function loadSearches(){ state.searches = await api('GET','/api/searches')
 
 $('save').onclick = async function(){
   $('err').textContent = '';
-  var body = { query: $('q').value, platforms: state.sel, min_price: $('min').value, max_price: $('max').value };
+  if ($('term-in').value.trim()) { addTo(state.terms, $('term-in').value, 5); $('term-in').value=''; }
+  if ($('ex-in').value.trim()) { addTo(state.excl, $('ex-in').value, 20); $('ex-in').value=''; }
+  if (!state.terms.length) { $('err').textContent = 'Voeg minimaal één zoekterm toe'; return; }
+  var body = { name: $('sname').value, terms: state.terms, exclude: state.excl, platforms: state.sel, min_price: $('min').value, max_price: $('max').value };
   $('save').disabled = true;
   try {
     if (state.editId) await api('PATCH','/api/searches/'+state.editId, body);
@@ -235,6 +336,22 @@ $('save').onclick = async function(){
   $('save').disabled = false;
 };
 $('cancel').onclick = resetForm;
+$('tpls').innerHTML = TPL.map(function(t, i){ return '<button type="button" class="tpl" data-t="'+i+'">'+t.n+'</button>'; }).join('');
+Array.prototype.forEach.call(document.querySelectorAll('.tpl'), function(b){
+  b.onclick = function(){
+    var t = TPL[+b.getAttribute('data-t')];
+    $('sname').value = t.name; state.terms = t.terms.slice(); state.excl = t.excl.slice();
+    $('min').value = t.min; $('max').value = t.max;
+    state.sel = t.p.filter(function(p){ return !state.me || state.me.tier.platforms.indexOf(p) !== -1; });
+    if (state.me) renderPlats(); renderChips();
+  };
+});
+bindChipInput('term-in', function(){ return state.terms; }, 5);
+bindChipInput('ex-in', function(){ return state.excl; }, 20);
+$('terms-box').onclick = function(){ $('term-in').focus(); };
+$('ex-box').onclick = function(){ $('ex-in').focus(); };
+['min','max'].forEach(function(id){ $(id).addEventListener('input', renderPreview); });
+renderChips();
 $('pause').onclick = async function(){
   try { await api('POST','/api/pause',{ paused: !state.me.user.paused }); state.me.user.paused = !state.me.user.paused; render(); } catch(e){ toast(e.message); }
 };

@@ -23,8 +23,19 @@ function junk(title, query) {
 }
 var running = false;
 
+function excluded(title, list) {
+  if (!list || !list.length) return false;
+  var t = ' ' + title.replace(/[^a-z0-9äöüéèàç ]+/g, ' ').replace(/\s+/g, ' ') + ' ';
+  for (var i = 0; i < list.length; i++) {
+    var w = String(list[i]).toLowerCase().replace(/[^a-z0-9äöüéèàç ]+/g, ' ').trim();
+    if (w && t.indexOf(' ' + w) !== -1) return true; // woord (of woordbegin) komt voor
+  }
+  return false;
+}
+
 function matches(item, s) {
   var title = String(item.title || '').toLowerCase();
+  if (excluded(title, s.exclude)) return false;
   if (junk(title, s.query.toLowerCase())) return false;
   var words = s.query.toLowerCase().split(/\s+/).filter(function (w) { return w.length > 1; });
   for (var i = 0; i < words.length; i++) if (title.indexOf(words[i]) === -1) return false;
@@ -40,14 +51,20 @@ async function checkSearch(s) {
   var platforms = s.platforms.filter(function (p) { return tier.platforms.indexOf(p) !== -1; });
   var found = [];
   var counts = [];
-  for (var i = 0; i < platforms.length; i++) {
-    try {
-      var items = await scrapers[platforms[i]].search(s);
-      var ok = items.filter(function (it) { return matches(it, s); });
-      counts.push(platforms[i] + ' ' + items.length + '/' + ok.length);
-      found = found.concat(ok);
-    } catch (e) {
-      console.error('[' + platforms[i] + '] ' + s.query + ': ' + e.message);
+  var dup = {};
+  // Elke zoekterm apart zoeken, resultaten samenvoegen (zelfde advertentie maar één keer)
+  var terms = s.terms && s.terms.length ? s.terms : [s.query];
+  for (var ti = 0; ti < terms.length; ti++) {
+    var st = Object.assign({}, s, { query: terms[ti] });
+    for (var i = 0; i < platforms.length; i++) {
+      try {
+        var items = await scrapers[platforms[i]].search(st);
+        var ok = items.filter(function (it) { return matches(it, st) && !dup[it.platform + ':' + it.id] && (dup[it.platform + ':' + it.id] = 1); });
+        counts.push(platforms[i] + ' ' + items.length + '/' + ok.length);
+        found = found.concat(ok);
+      } catch (e) {
+        console.error('[' + platforms[i] + '] ' + terms[ti] + ': ' + e.message);
+      }
     }
   }
 
@@ -69,14 +86,14 @@ async function checkSearch(s) {
   // Eerste run: alleen bestaande advertenties opslaan, niet spammen
   if (!s.seeded) {
     await db.pool.query('UPDATE alert_searches SET seeded = TRUE, last_checked_at = NOW() WHERE id = $1', [s.id]);
-    await tg.sendMessage(s.chat_id, '✅ Zoekopdracht <b>' + tg.esc(s.query) + '</b> staat aan. Je krijgt vanaf nu alleen nieuwe advertenties.');
+    await tg.sendMessage(s.chat_id, '✅ Zoekopdracht <b>' + tg.esc(s.name || s.query) + '</b> staat aan' + (terms.length > 1 ? ' (' + terms.length + ' zoektermen)' : '') + '. Je krijgt vanaf nu alleen nieuwe advertenties.');
     return;
   }
 
   await db.pool.query('UPDATE alert_searches SET last_checked_at = NOW() WHERE id = $1', [s.id]);
-  console.log('[check] "' + s.query + '" ' + counts.join(', ') + ' (gevonden/passend), nieuw: ' + fresh.length);
+  console.log('[check] "' + (s.name || s.query) + '" ' + counts.join(', ') + ' (gevonden/passend), nieuw: ' + fresh.length);
   for (var k = 0; k < fresh.length && k < MAX_PER_RUN; k++) {
-    await tg.sendListing(s.chat_id, fresh[k], s.query);
+    await tg.sendListing(s.chat_id, fresh[k], s.name || s.query);
   }
 }
 

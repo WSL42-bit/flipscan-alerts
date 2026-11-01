@@ -40,6 +40,9 @@ async function init() {
     'ALTER TABLE alert_seen ADD COLUMN IF NOT EXISTS attempts INTEGER NOT NULL DEFAULT 0;' +
     'ALTER TABLE alert_seen ADD COLUMN IF NOT EXISTS retry_at TIMESTAMPTZ NOT NULL DEFAULT NOW();' +
     'CREATE INDEX IF NOT EXISTS alert_seen_pending ON alert_seen(search_id, retry_at) WHERE pending;' +
+    'ALTER TABLE alert_searches ADD COLUMN IF NOT EXISTS name TEXT;' +
+    'ALTER TABLE alert_searches ADD COLUMN IF NOT EXISTS terms TEXT[];' +
+    'ALTER TABLE alert_searches ADD COLUMN IF NOT EXISTS exclude TEXT[];' +
     'CREATE TABLE IF NOT EXISTS alert_platform_state (' +
     ' search_id INTEGER NOT NULL REFERENCES alert_searches(id) ON DELETE CASCADE,' +
     ' platform TEXT NOT NULL, PRIMARY KEY(search_id, platform));' +

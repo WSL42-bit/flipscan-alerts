@@ -98,20 +98,37 @@ app.get('/api/me', auth.requireUser, async function (req, res) {
 });
 
 app.get('/api/searches', auth.requireUser, async function (req, res) {
-  var r = await db.pool.query('SELECT id, query, platforms, min_price, max_price, active, last_checked_at FROM alert_searches WHERE chat_id=$1 ORDER BY created_at', [req.chatId]);
+  var r = await db.pool.query('SELECT id, name, query, terms, exclude, platforms, min_price, max_price, active, last_checked_at FROM alert_searches WHERE chat_id=$1 ORDER BY created_at', [req.chatId]);
   res.json(r.rows);
 });
 
+// Lijst van korte teksten opschonen: trim, kleine letters waar nodig, dubbele eruit, max aantal
+function cleanList(v, maxItems, maxLen, lower) {
+  var arr = Array.isArray(v) ? v : (typeof v === 'string' ? v.split(',') : []);
+  var out = [];
+  arr.forEach(function (x) {
+    var t = String(x == null ? '' : x).replace(/\s+/g, ' ').trim().slice(0, maxLen);
+    if (lower) t = t.toLowerCase();
+    if (t.length >= 2 && out.map(function (o) { return o.toLowerCase(); }).indexOf(t.toLowerCase()) === -1) out.push(t);
+  });
+  return out.slice(0, maxItems);
+}
+
 function cleanSearch(b, tier) {
-  var q = String(b.query || '').trim().slice(0, 80);
-  if (q.length < 2) return { error: 'Vul een zoekterm in' };
+  // Meerdere zoektermen per zoekopdracht (max 5). 'query' blijft de eerste term voor oude code.
+  var terms = cleanList(b.terms != null ? b.terms : [b.query], 5, 60, false);
+  if (!terms.length) return { error: 'Vul minimaal één zoekterm in' };
+  var q = terms[0];
+  var name = String(b.name || '').replace(/\s+/g, ' ').trim().slice(0, 40) || null;
+  var exclude = cleanList(b.exclude, 20, 40, true);
   var platforms = (Array.isArray(b.platforms) ? b.platforms : []).filter(function (p) { return config.ALL_PLATFORMS.indexOf(p) !== -1; });
   if (!platforms.length) return { error: 'Kies minimaal één platform' };
   var locked = platforms.filter(function (p) { return TIERS[tier].platforms.indexOf(p) === -1; });
   if (locked.length) return { error: 'Platform niet beschikbaar' };
   var min = b.min_price ? Math.max(0, parseInt(b.min_price, 10)) : null;
   var max = b.max_price ? Math.max(0, parseInt(b.max_price, 10)) : null;
-  return { query: q, platforms: platforms, min: isNaN(min) ? null : min, max: isNaN(max) ? null : max };
+  if (min != null && max != null && min > max) return { error: 'Minimumprijs mag niet hoger zijn dan maximumprijs' };
+  return { query: q, name: name, terms: terms, exclude: exclude, platforms: platforms, min: isNaN(min) ? null : min, max: isNaN(max) ? null : max };
 }
 
 app.post('/api/searches', auth.requireUser, async function (req, res) {
@@ -123,8 +140,8 @@ app.post('/api/searches', auth.requireUser, async function (req, res) {
     if (u.tier !== 'pro') return res.status(403).json({ error: 'Start eerst je abonnement (' + config.TRIAL_DAYS + ' dagen gratis) om meldingen te krijgen.' });
     if (count >= TIERS.pro.maxSearches) return res.status(403).json({ error: 'Maximum van ' + TIERS.pro.maxSearches + ' zoekopdrachten bereikt.' });
     var r = await db.pool.query(
-      'INSERT INTO alert_searches (chat_id, query, platforms, min_price, max_price) VALUES ($1,$2,$3,$4,$5) RETURNING *',
-      [req.chatId, c.query, c.platforms, c.min, c.max]
+      'INSERT INTO alert_searches (chat_id, query, name, terms, exclude, platforms, min_price, max_price) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *',
+      [req.chatId, c.query, c.name, c.terms, c.exclude, c.platforms, c.min, c.max]
     );
     res.json(r.rows[0]);
   } catch (e) {
@@ -150,10 +167,12 @@ app.patch('/api/searches/:id', auth.requireUser, async function (req, res) {
     var c = cleanSearch(req.body, u.tier);
     if (c.error) return res.status(400).json({ error: c.error });
     await db.pool.query(
-      'UPDATE alert_searches SET query=$1, platforms=$2, min_price=$3, max_price=$4, seeded=FALSE WHERE id=$5 AND chat_id=$6',
-      [c.query, c.platforms, c.min, c.max, req.params.id, req.chatId]
-    );
-    await db.pool.query('DELETE FROM alert_seen WHERE search_id=$1', [req.params.id]);
+      'UPDATE alert_searches SET query=$1, name=$2, terms=$3, exclude=$4, platforms=$5, min_price=$6, max_price=$7, seeded=FALSE WHERE id=$8 AND chat_id=$9 RETURNING id',
+      [c.query, c.name, c.terms, c.exclude, c.platforms, c.min, c.max, req.params.id, req.chatId]
+    ).then(async function (r) {
+      // Alleen de geschiedenis van je eigen zoekopdracht wissen
+      if (r.rowCount) await db.pool.query('DELETE FROM alert_seen WHERE search_id=$1', [req.params.id]);
+    });
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -269,11 +288,13 @@ app.post('/tg/webhook', async function (req, res) {
       return tg.sendMessage(chatId, await growth.statsText() + '\n\n<i>Je krijgt dit rapport elke ochtend om 09:00.</i>');
     }
     if (cmd === '/zoekopdrachten') {
-      var r = await db.pool.query('SELECT query, platforms, min_price, max_price, active FROM alert_searches WHERE chat_id=$1 ORDER BY created_at', [chatId]);
+      var r = await db.pool.query('SELECT name, query, terms, exclude, platforms, min_price, max_price, active FROM alert_searches WHERE chat_id=$1 ORDER BY created_at', [chatId]);
       if (!r.rows.length) return tg.sendMessage(chatId, 'Je hebt nog geen zoekopdrachten.', loginButton(chatId));
       var lines = r.rows.map(function (s) {
         var price = s.min_price || s.max_price ? ' (€' + (s.min_price || 0) + ' tot €' + (s.max_price || '∞') + ')' : '';
-        return (s.active ? '✅ ' : '⏸ ') + '<b>' + tg.esc(s.query) + '</b>' + price + '\n    ' + s.platforms.join(', ');
+        var terms = (s.terms && s.terms.length ? s.terms : [s.query]).join(', ');
+        return (s.active ? '✅ ' : '⏸ ') + '<b>' + tg.esc(s.name || s.query) + '</b>' + price + '\n    ' + tg.esc(terms) +
+          (s.exclude && s.exclude.length ? '\n    zonder: ' + tg.esc(s.exclude.join(', ')) : '') + '\n    ' + s.platforms.join(', ');
       });
       return tg.sendMessage(chatId, lines.join('\n'), loginButton(chatId));
     }
